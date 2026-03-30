@@ -1,0 +1,88 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.egg-link
+.installed.cfg
+lib/
+lib64/
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# pyenv
+.python-version
+
+# Secrets / environment
+*.env
+*.env.*
+.secrets
+secrets.yaml
+secrets.yml
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.docker/
+
+# Helm / Kubernetes
+*.tgz
+charts/*/charts/
+values.override.yaml
+
+# Logs
+*.log
+logs/
+
+# Prometheus / Grafana data
+data/
+prometheus_data/
+grafana_data/
