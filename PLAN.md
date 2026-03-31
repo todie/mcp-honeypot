@@ -391,41 +391,189 @@ wrapper instance.
 
 ---
 
+### T14 — README
+**Complexity:** S
+**Depends on:** none (can start any time; reference T01 directory layout)
+**Files to create:**
+- `README.md`
+
+**Acceptance criteria:**
+- Project overview (1–2 paragraphs: what it is, why it exists)
+- Architecture diagram (ASCII, matching `docs/architecture.md` component flow)
+- Quickstart section: `git clone` → `docker-compose up` → URLs for each service
+- Environment variable table (mirrors `.env.example`)
+- Contributing notes: branch naming, PR expectations, how to run the smoke test
+- Links to all `docs/` files in a "Further reading" section
+
+---
+
+### T15 — Structured Logging
+**Complexity:** S
+**Depends on:** T02
+**Files to create:**
+- `server/logging_config.py`
+
+**Acceptance criteria:**
+- Configures `structlog` (preferred) or stdlib `logging.config` for JSON output
+- Log level sourced from `settings.LOG_LEVEL`
+- Every log record includes: `timestamp` (ISO 8601), `level`, `logger`,
+  `service` (from `settings.OTEL_SERVICE_NAME`), `session_id` (when available
+  via context var)
+- `main.py` calls `setup_logging()` from this module before anything else
+- `uvicorn` access logs are suppressed or reformatted to the same JSON schema
+  (not raw uvicorn format)
+- Works correctly in both local dev (human-readable fallback optional) and
+  Docker (always JSON)
+
+---
+
+### T16 — GitHub Actions CI
+**Complexity:** S
+**Depends on:** none (can start any time after T01 creates `server/`)
+**Files to create:**
+- `.github/workflows/ci.yml`
+
+**Acceptance criteria:**
+- Triggers on `push` and `pull_request` to any branch
+- Three jobs, runnable in parallel:
+  - **lint**: `ruff check server/ tests/` — zero warnings required
+  - **typecheck**: `pyright server/` with strict mode
+  - **test**: `pytest tests/` (unit tests only, no Docker required)
+- Python version matrix: 3.12 only (matches `server/Dockerfile`)
+- Uses `actions/cache` for pip dependencies
+- CI passes on a clean repo with no test files yet (jobs exit 0 when test
+  directory is empty)
+- `ruff.toml` or `[tool.ruff]` in `pyproject.toml` committed alongside
+
+---
+
+### T17 — Agent Fingerprinting Tests
+**Complexity:** S
+**Depends on:** T12
+**Files to create / modify:**
+- `tests/test_fingerprinting.py` (new file; keep separate from smoke test)
+
+**Acceptance criteria:**
+- Test 1: connect with a custom `User-Agent` header (`FakeAgent/1.0`); verify
+  that the resulting Jaeger span has `agent.id == "FakeAgent/1.0"` (poll
+  Jaeger API, 30 s timeout)
+- Test 2: send an MCP `initialize` message with `clientInfo.name = "TestBot"`
+  and `clientInfo.version = "2.0"`; verify `agent.id == "TestBot/2.0"` in span
+- Test 3: connect without `User-Agent` and without `clientInfo`; verify
+  `agent.id` falls back to the session-ID-derived value (non-empty string,
+  hex-like)
+- All three tests run against the live stack (`docker-compose up` must be
+  running); document this requirement in a module-level docstring
+- `pytest tests/test_fingerprinting.py` exits 0 on success
+
+---
+
+### T18 — Rate Limiting + Security Headers
+**Complexity:** S
+**Depends on:** T07
+**Files to modify:**
+- `server/main.py`
+
+**Files to create:**
+- `server/middleware.py`
+
+**Acceptance criteria:**
+- Rate limiting via `slowapi` (preferred) or `starlette-limiter`:
+  - Global default: 60 req/min per IP
+  - `/sse` endpoint: 10 connections/min per IP (aggressive agents get slowed,
+    not blocked — return 429 with `Retry-After` header)
+- Security headers middleware (applied to all responses):
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `Referrer-Policy: no-referrer`
+  - No `Server` header leakage (strip or replace with `mcp-honeypot`)
+- CORS: allow all origins (`*`) in Phase 1/2 (honeypot should be reachable);
+  tighten in Phase 3 via env var `CORS_ORIGINS`
+- Rate limit breaches are logged (structured log + span attribute
+  `honeypot.rate_limited = true`)
+- `GET /healthz` is exempt from rate limiting
+
+---
+
+### T19 — Prometheus Recording Rules for Tool Co-occurrence
+**Complexity:** M
+**Depends on:** T09, T10
+**Files to create:**
+- `prometheus/rules/tool_cooccurrence.yml`
+
+**Files to modify:**
+- `prometheus/prometheus.yml` (add `rule_files` reference)
+
+**Acceptance criteria:**
+- Recording rules pre-aggregate pairwise tool co-occurrence counts:
+  ```promql
+  # recorded as: mcp_honeypot:tool_cooccurrence:rate5m
+  # label pair: tool_a, tool_b
+  ```
+- Because Prometheus cannot natively compute co-occurrence from raw counters,
+  the recording rules use a label-join approach or an aggregation script:
+  - Option A (pure PromQL): record per-agent, per-tool rate; the Grafana panel
+    joins two copies of the metric with different label matchers to approximate
+    co-occurrence. Document the limitation.
+  - Option B (preferred): lightweight Python aggregation script
+    `server/tools/cooccurrence_aggregator.py` that reads from Jaeger's HTTP
+    API (traces for a time window), computes pairwise counts, and pushes them
+    to a Prometheus Pushgateway (add Pushgateway service to docker-compose).
+    Recording rules then just alias the pushed metric.
+- `promtool check rules prometheus/rules/tool_cooccurrence.yml` passes
+- The Tool Intelligence dashboard's co-occurrence matrix panel uses this
+  metric (update `dashboards/json/tool-intelligence.json` if needed)
+- Document approach chosen and its tradeoffs in a comment block at the top of
+  the rules file
+
+---
+
 ## Dependency Graph
 
 ```
+T14 (README)  ← no deps; start any time
+T16 (CI)      ← no deps; start any time after T01
+
 T01 (scaffold)
  ├── T02 (config)
- │    ├── T03 (otel setup) ──────────────────┐
- │    └── T04 (tagging) ──────────────────┐  │
- │         └── T05 (fake responses) ──┐   │  │
- │              └── T06a filesystem   │   │  │
- │              └── T06b web          ├───┴──┴──→ T07 (main) → T12 (smoke test)
- │              └── T06c exec         │
- │              └── T06d secrets ─────┘
- ├── T08 (collector config) ──────────────┐
- ├── T09 (prometheus config) ─────────────┤
- └── T10 (grafana dashboards) ────────────┴──→ T11 (docker-compose) → T12
-                                                     ↓ (after Phase 1 stable)
-                                                    T13 (helm)
+ │    ├── T03 (otel setup) ─────────────────────────────────┐
+ │    ├── T04 (tagging) ───────────────────────────────┐    │
+ │    │    └── T05 (fake responses)                    │    │
+ │    │         ├── T06a filesystem ──────────────┐    │    │
+ │    │         ├── T06b web        ──────────────┤    │    │
+ │    │         ├── T06c exec       ──────────────┤    │    │
+ │    │         └── T06d secrets    ──────────────┴────┴────┴──→ T07 (main)
+ │    └── T15 (logging) ─────────────────────────────────────────→ (imported by T07)
+ │                                                                      │
+ │                                                          ┌───────────┤
+ │                                                          ↓           ↓
+ ├── T08 (collector config) ──────────────┐           T12 (smoke) → T17 (fingerprint tests)
+ ├── T09 (prometheus config) ─────────────┤           T18 (rate limiting)
+ │    └─────────────────────────────────┐ │
+ └── T10 (grafana dashboards) ──────────┴─┴──→ T11 (docker-compose) → T12
+      └── T19 (recording rules) ←─────────┘
+                                               ↓ (after Phase 1 stable)
+                                              T13 (helm)
 ```
 
 ## Parallelisation for a Solo Build
 
 | Session | Tasks | Notes |
 |---------|-------|-------|
-| 1 | T01 | Unblocks everything |
-| 2 | T02, T08, T09 | All pure files, no dependencies on each other |
-| 3 | T03, T04, T10 | T03+T04 use T02; T10 can start once datasource URLs known |
-| 4 | T05 | Needs T04 interface stable |
-| 5 | T06a, T06b, T06c, T06d | All independent; 4 small files |
-| 6 | T07, T11 | T07 needs T06 done; T11 needs T08-T10 done |
-| 7 | T12 | Needs T07 + T11 (running stack) |
-| 8 | T13 | Phase 2; start when Phase 1 is stable |
+| 1 | T01, T14, T16 | T01 unblocks everything; T14 + T16 have no deps and can be written immediately |
+| 2 | T02, T08, T09 | Pure config/code files; no inter-dependencies |
+| 3 | T03, T04, T10, T15 | T03+T04+T15 all depend only on T02; T10 needs T09 datasource URLs |
+| 4 | T05, T19 | T05 needs T04 interface stable; T19 needs T09+T10 done |
+| 5 | T06a, T06b, T06c, T06d | All 4 handlers independent; ideal for concurrent agents |
+| 6 | T07, T11 | T07 needs T03+T06+T15; T11 needs T08-T10 done |
+| 7 | T12, T18 | T12 needs T07+T11 (running stack); T18 modifies T07's app (do after T12 passes) |
+| 8 | T17 | Needs T12 passing; extends the live-stack test suite |
+| 9 | T13 | Phase 2; start when Phase 1 is stable |
 
-**Optimal agent parallelisation**: Sessions 2, 3, 5 each contain work that
+**Optimal agent parallelisation**: Sessions 1, 3, 5 each contain work that
 can be split across concurrent agent instances with no shared file writes.
-Sessions 1, 4, 6, 7, 8 are single sequential tasks.
+Session 1 can spawn T14 and T16 as background agents while T01 scaffolding
+is done interactively. Sessions 2, 4 are lightly parallel (2–3 tasks each).
 
 ---
 
