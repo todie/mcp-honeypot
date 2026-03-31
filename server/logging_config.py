@@ -56,7 +56,7 @@ def _add_service_name(
 # Shared processor chain (used by both structlog *and* stdlib foreign loggers)
 # ---------------------------------------------------------------------------
 def _shared_processors() -> list[structlog.types.Processor]:
-    return [
+    return [  # type: ignore[return-value]  # structlog Processor types are broad unions
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,

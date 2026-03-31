@@ -32,12 +32,14 @@ ignore = [
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["server"]
+extraPaths = ["server"]
 reportMissingImports = true
 reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+collect_ignore = ["tests/smoke_test.py"]
 markers = [
     "integration: tests that require the live Docker Compose stack",
 ]
