@@ -41,6 +41,7 @@ class Settings:
     # Identity
     service_name: str
     honeypot_phase: str  # "research" | "public"
+    webhook_secret: str | None
 
     # Telemetry
     otlp_endpoint: str
@@ -78,6 +79,7 @@ class Settings:
             mcp_port=mcp_port,
             service_name=_get("SERVICE_NAME", "mcp-honeypot"),
             honeypot_phase=honeypot_phase,
+            webhook_secret=webhook_secret,
             otlp_endpoint=_get("OTLP_ENDPOINT", "otel-collector:4317"),
             otlp_insecure=os.environ.get("OTLP_INSECURE", "true").lower() != "false",
             log_level=log_level,
