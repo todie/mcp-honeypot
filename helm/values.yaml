@@ -1,0 +1,155 @@
+# ── Global Settings ──────────────────────────────────────────────────────────
+global:
+  # Kubernetes namespace (used by helpers for fullname prefix)
+  namespace: mcp-honeypot
+  # Default image pull policy for all containers
+  imagePullPolicy: IfNotPresent
+
+# ── MCP Honeypot Server ─────────────────────────────────────────────────────
+honeypot:
+  # Container image for the MCP honeypot server
+  image:
+    repository: ghcr.io/todie/mcp-honeypot
+    tag: "0.1.0"
+  # Number of replicas (stateless — safe to scale horizontally)
+  replicas: 1
+  # MCP server listen port
+  port: 8000
+  # Environment variables passed to the server container
+  env:
+    # OTLP gRPC endpoint (points to the in-cluster OTel Collector service)
+    OTLP_ENDPOINT: "otel-collector:4317"
+    # Skip TLS for OTLP (in-cluster traffic)
+    OTLP_INSECURE: "true"
+    # Service name used in all traces and metrics
+    SERVICE_NAME: "mcp-honeypot"
+    # Listen address inside the container
+    MCP_HOST: "0.0.0.0"
+    # Listen port (must match .honeypot.port)
+    MCP_PORT: "8000"
+    # Structured log level: DEBUG | INFO | WARNING | ERROR | CRITICAL
+    LOG_LEVEL: "INFO"
+    # Honeypot operating phase: research | public
+    HONEYPOT_PHASE: "research"
+    # CORS allowed origins (use * for Phase 1/2, restrict in Phase 3)
+    CORS_ORIGINS: "*"
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # Liveness probe configuration
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+  # Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+
+# ── OpenTelemetry Collector ─────────────────────────────────────────────────
+otelCollector:
+  # OTel Collector Contrib image
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.96.0"
+  replicas: 1
+  # gRPC port for OTLP receiver (honeypot -> collector)
+  grpcPort: 4317
+  # HTTP port for OTLP receiver
+  httpPort: 4318
+  # Prometheus metrics export port (prometheus -> collector)
+  prometheusExportPort: 8889
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Memory limiter processor setting (MiB)
+  memoryLimitMib: 512
+
+# ── Prometheus ──────────────────────────────────────────────────────────────
+prometheus:
+  # Prometheus server image
+  image:
+    repository: prom/prometheus
+    tag: "v2.51.0"
+  # Prometheus web UI and API port
+  port: 9090
+  # TSDB time-based retention
+  retentionTime: "30d"
+  # TSDB size-based retention
+  retentionSize: "10GB"
+  # Persistent volume claim size
+  storage: 10Gi
+  # Storage class name (empty string uses the cluster default)
+  storageClassName: ""
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ── Jaeger ──────────────────────────────────────────────────────────────────
+jaeger:
+  # Jaeger all-in-one image
+  image:
+    repository: jaegertracing/all-in-one
+    tag: "1.55"
+  # Jaeger UI port
+  uiPort: 16686
+  # OTLP gRPC port (collector -> jaeger)
+  otlpGrpcPort: 4317
+  # Persistent volume claim size for Badger storage
+  storage: 20Gi
+  # Storage class name (empty string uses the cluster default)
+  storageClassName: ""
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# ── Grafana ─────────────────────────────────────────────────────────────────
+grafana:
+  # Grafana image
+  image:
+    repository: grafana/grafana
+    tag: "10.4.0"
+  # Grafana web UI port
+  port: 3000
+  # Default admin credentials (override adminPassword for production)
+  adminUser: admin
+  adminPassword: honeypot
+  # Persistent volume claim size
+  storage: 5Gi
+  # Storage class name (empty string uses the cluster default)
+  storageClassName: ""
+  # Resource requests and limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

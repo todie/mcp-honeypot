@@ -1,0 +1,122 @@
+# =============================================================================
+# Tool Co-occurrence Recording Rules (Option A: Pure PromQL)
+# =============================================================================
+#
+# Approach: Pre-aggregate per-agent, per-tool call rates so the Grafana
+# Tool Intelligence dashboard can approximate pairwise tool co-occurrence
+# by joining two copies of the same metric with different label matchers.
+#
+# How it works:
+#   1. mcp_honeypot:tool_calls_by_agent:rate5m records the per-agent,
+#      per-tool call rate over a 5-minute window.
+#   2. In Grafana, the co-occurrence matrix panel performs a PromQL vector
+#      multiplication of this metric against itself with relabelled tool
+#      names (tool_a, tool_b). For example:
+#
+#        mcp_honeypot:tool_calls_by_agent:rate5m{tool="read_file"}
+#        * on(agent_id) group_left()
+#        mcp_honeypot:tool_calls_by_agent:rate5m{tool="fetch_url"}
+#
+#      A non-zero result means the agent called both tools within the
+#      same 5-minute window -- an approximation of co-occurrence.
+#
+# Tradeoffs:
+#   - Pro: No additional infrastructure (no Pushgateway, no aggregator script).
+#   - Pro: Rules are cheap to evaluate and pass promtool validation.
+#   - Con: This is an approximation, not true pairwise co-occurrence. Two
+#     tools having non-zero rates for the same agent in the same window does
+#     NOT guarantee they were called in the same session or in sequence.
+#   - Con: The Grafana panel must explicitly enumerate tool pairs or use a
+#     template variable loop; Prometheus cannot produce a (tool_a, tool_b)
+#     label pair from a single counter natively.
+#   - Con: Session-level co-occurrence (e.g., "read_file then fetch_url in
+#     the same session") requires trace-level analysis in Jaeger, not
+#     Prometheus. Consider Option B (Jaeger aggregator script) if session
+#     granularity is needed in the future.
+#
+# Metric namespace: mcp_honeypot (set in collector/config.yaml prometheus
+# exporter). All source metrics use this prefix.
+# =============================================================================
+
+groups:
+  - name: tool_cooccurrence
+    interval: 30s
+    rules:
+      # -----------------------------------------------------------------
+      # Per-agent, per-tool call rate (5m window)
+      # Primary building block for co-occurrence approximation in Grafana.
+      # Labels preserved: agent_id, tool
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:tool_calls_by_agent:rate5m
+        expr: >-
+          sum by (agent_id, tool) (
+            rate(mcp_honeypot_mcp_tool_calls_total[5m])
+          )
+
+      # -----------------------------------------------------------------
+      # Per-tool total call rate (across all agents)
+      # Used by: Tool Intelligence call frequency heatmap, top tools bar
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:tool_calls:rate5m
+        expr: >-
+          sum by (tool) (
+            rate(mcp_honeypot_mcp_tool_calls_total[5m])
+          )
+
+      # -----------------------------------------------------------------
+      # Per-agent active tool count (5m window)
+      # Agents calling many distinct tools in a short window are more
+      # likely to be performing reconnaissance. Useful for anomaly panels.
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:active_tools_per_agent:count5m
+        expr: >-
+          count by (agent_id) (
+            rate(mcp_honeypot_mcp_tool_calls_total[5m]) > 0
+          )
+
+      # -----------------------------------------------------------------
+      # Anomaly rate by flag type
+      # Used by: Anomaly Monitor dashboard, Tool Intelligence correlation
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:anomalies_by_flag:rate5m
+        expr: >-
+          sum by (flag) (
+            rate(mcp_honeypot_mcp_anomalies_total[5m])
+          )
+
+      # -----------------------------------------------------------------
+      # Per-agent anomaly rate
+      # Correlate with tool usage to identify which agents trigger which
+      # anomaly flags -- supports agent drilldown dashboard.
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:anomalies_by_agent:rate5m
+        expr: >-
+          sum by (agent_id, flag) (
+            rate(mcp_honeypot_mcp_anomalies_total[5m])
+          )
+
+      # -----------------------------------------------------------------
+      # Tool call rate by category (filesystem, web, exec, secrets)
+      # Requires a "category" label on the source metric. If not present,
+      # this rule evaluates to empty and is harmless.
+      # Used by: Tool Intelligence category breakdown panel
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:tool_calls_by_category:rate5m
+        expr: >-
+          sum by (category) (
+            rate(mcp_honeypot_mcp_tool_calls_total[5m])
+          )
+
+      # -----------------------------------------------------------------
+      # Average response latency by tool (5m window)
+      # Used by: Tool Intelligence chain depth / latency panel
+      # -----------------------------------------------------------------
+      - record: mcp_honeypot:response_latency_by_tool:avg5m
+        expr: >-
+          sum by (tool) (
+            rate(mcp_honeypot_mcp_response_latency_ms_sum[5m])
+          )
+          /
+          sum by (tool) (
+            rate(mcp_honeypot_mcp_response_latency_ms_count[5m])
+          )

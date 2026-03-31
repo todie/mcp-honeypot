@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-honeypot.fullname" . }}-otel-collector
+  labels:
+    {{- include "mcp-honeypot.componentFullLabels" (dict "component" "otel-collector" "root" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.otelCollector.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mcp-honeypot.componentLabels" (dict "component" "otel-collector" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-honeypot.componentLabels" (dict "component" "otel-collector" "root" .) | nindent 8 }}
+    spec:
+      containers:
+        - name: otel-collector
+          image: "{{ .Values.otelCollector.image.repository }}:{{ .Values.otelCollector.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          args: ["--config=/etc/otelcol-contrib/config.yaml"]
+          ports:
+            - name: otlp-grpc
+              containerPort: {{ .Values.otelCollector.grpcPort }}
+              protocol: TCP
+            - name: otlp-http
+              containerPort: {{ .Values.otelCollector.httpPort }}
+              protocol: TCP
+            - name: prom-export
+              containerPort: {{ .Values.otelCollector.prometheusExportPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib/config.yaml
+              subPath: config.yaml
+              readOnly: true
+          resources:
+            {{- toYaml .Values.otelCollector.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "mcp-honeypot.fullname" . }}-otel-collector
