@@ -40,9 +40,21 @@ reportMissingTypeStubs = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=server --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=60"
 markers = [
     "integration: tests that require the live Docker Compose stack",
     "unit: fast pure-logic tests (no external deps)",
     "module: tests for server modules (may import OTel/structlog)",
     "tools: tests for CLI tools and test harness",
+]
+
+[tool.coverage.run]
+source = ["server"]
+omit = ["server/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
 ]

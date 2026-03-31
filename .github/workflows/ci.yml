@@ -80,7 +80,7 @@ jobs:
       - name: Run unit tests
         env:
           PYTHONPATH: server
-        run: pytest tests/ -m unit -v --tb=short
+        run: pytest tests/ -m unit -v --tb=short --cov=server --cov-report=term-missing --no-cov-on-fail
 
   # Module tests — server modules with OTel/structlog (~50 tests)
   test-module:
@@ -106,7 +106,7 @@ jobs:
       - name: Run module tests
         env:
           PYTHONPATH: server
-        run: pytest tests/ -m module -v --tb=short
+        run: pytest tests/ -m module -v --tb=short --cov=server --cov-report=term-missing --no-cov-on-fail
 
   # Tool/harness tests — adversarial agent, export, harness (~50 tests)
   test-tools:
@@ -132,7 +132,7 @@ jobs:
       - name: Run tool tests
         env:
           PYTHONPATH: server
-        run: pytest tests/ -m tools -v --tb=short
+        run: pytest tests/ -m tools -v --tb=short --cov=server --cov-report=term-missing --no-cov-on-fail
 
   secrets:
     name: Secrets scan (gitleaks)
@@ -161,3 +161,12 @@ jobs:
           sleep 3
           curl -sf http://localhost:8000/healthz | grep -q '"status"'
           docker stop honeypot-ci
+
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: mcp-honeypot:ci
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
