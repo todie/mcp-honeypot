@@ -6,6 +6,7 @@ and exposes three custom metrics for honeypot-specific observability.
 
 from __future__ import annotations
 
+from config import settings
 from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
     OTLPMetricExporter,
@@ -20,8 +21,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Tracer
-
-from config import settings
 
 # ---------------------------------------------------------------------------
 # Idempotency guard

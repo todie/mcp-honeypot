@@ -19,11 +19,10 @@ from typing import Any
 
 import anyio
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from opentelemetry.trace import StatusCode
-
 from config import settings
 from instrumentation import get_tracer
 from logging_config import get_logger, session_id_var
+from opentelemetry.trace import StatusCode
 
 logger = get_logger(__name__)
 tracer = get_tracer("mcp-honeypot.transport")

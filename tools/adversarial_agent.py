@@ -702,7 +702,7 @@ class AdversarialAgent:
         errors = sum(1 for c in phase_result.calls if c.error)
         print()
         print(
-            f"{prefix} {phase_colour(f'Phase complete:')} "
+            f"{prefix} {phase_colour('Phase complete:')} "
             f"{len(phase_result.calls)} calls, "
             f"{errors} errors, "
             f"{phase_result.elapsed_s:.1f}s"
@@ -755,9 +755,9 @@ def _print_summary(results: list[SessionResult], persona: str) -> None:
 
     print()
     print(dim("  Check Grafana dashboards for real-time telemetry data."))
-    print(dim(f"  Grafana:    http://localhost:3000"))
-    print(dim(f"  Jaeger:     http://localhost:16686"))
-    print(dim(f"  Prometheus: http://localhost:9090"))
+    print(dim("  Grafana:    http://localhost:3000"))
+    print(dim("  Jaeger:     http://localhost:16686"))
+    print(dim("  Prometheus: http://localhost:9090"))
     print(bold(cyan(f"={'=' * 64}")))
     print()
 

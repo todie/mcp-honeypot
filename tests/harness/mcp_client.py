@@ -18,7 +18,7 @@ import asyncio
 import json
 import logging
 from typing import Any
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -184,7 +184,7 @@ class McpTestClient:
         # Wait for the endpoint event
         try:
             await asyncio.wait_for(self._sse_connected.wait(), timeout=self._timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             await self.close()
             raise TimeoutError(
                 f"Timed out waiting for SSE endpoint event from {self._base_url}/sse"
@@ -313,7 +313,7 @@ class McpTestClient:
         # Wait for the SSE response
         try:
             result = await asyncio.wait_for(future, timeout=self._timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._pending.pop(msg_id, None)
             raise TimeoutError(
                 f"Timed out waiting for response to {method} (id={msg_id})"

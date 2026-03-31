@@ -9,9 +9,6 @@ import io
 import json
 import logging
 
-import pytest
-
-
 # ---------------------------------------------------------------------------
 # Logging with session_id
 # ---------------------------------------------------------------------------
@@ -43,7 +40,7 @@ class TestLoggingSetup:
 
     def test_log_output_contains_session_id_when_set(self):
         """When session_id_var is set, JSON log lines must include 'session_id'."""
-        from logging_config import setup_logging, session_id_var
+        from logging_config import session_id_var, setup_logging
 
         self._reset_logging()
         setup_logging()
@@ -68,7 +65,7 @@ class TestLoggingSetup:
 
     def test_log_output_omits_session_id_when_unset(self):
         """When session_id_var has no value, 'session_id' should be absent from the log."""
-        from logging_config import setup_logging, session_id_var
+        from logging_config import setup_logging
 
         self._reset_logging()
         setup_logging()
@@ -100,7 +97,7 @@ class TestInstrumentation:
 
     def test_setup_telemetry_idempotent(self):
         """Calling setup_telemetry() twice must not raise and must leave flag True."""
-        from instrumentation import setup_telemetry, _telemetry_initialised
+        from instrumentation import setup_telemetry
 
         setup_telemetry()
         setup_telemetry()  # second call should be a no-op
@@ -110,7 +107,7 @@ class TestInstrumentation:
 
     def test_get_tracer_returns_tracer_object(self):
         """get_tracer() must return a real Tracer, not None."""
-        from instrumentation import setup_telemetry, get_tracer
+        from instrumentation import get_tracer, setup_telemetry
 
         setup_telemetry()
         tracer = get_tracer("test")

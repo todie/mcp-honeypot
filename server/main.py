@@ -17,8 +17,13 @@ Or::
 from __future__ import annotations
 
 import json
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
+# ---------------------------------------------------------------------------
+# Bootstrap logging and telemetry (order matters)
+# ---------------------------------------------------------------------------
+from logging_config import get_logger, setup_logging
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
 from mcp.types import TextContent, Tool
@@ -26,11 +31,6 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
-
-# ---------------------------------------------------------------------------
-# Bootstrap logging and telemetry (order matters)
-# ---------------------------------------------------------------------------
-from logging_config import get_logger, setup_logging
 
 setup_logging()
 

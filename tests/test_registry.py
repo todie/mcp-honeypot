@@ -5,10 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 
-import pytest
 
-from tools.registry import TOOL_REGISTRY, ToolMeta, get_category
 from tagging import CATEGORY_MAP as TOOL_CATEGORIES
+from tools.registry import TOOL_REGISTRY, get_category
 
 VALID_CATEGORIES = {"filesystem", "web", "exec", "secrets"}
 

@@ -6,14 +6,14 @@ import json
 import time
 from typing import Any
 
-from opentelemetry.trace import Span
-
 from instrumentation import (
     mcp_anomalies_total,
     mcp_response_latency_ms,
     mcp_tool_calls_total,
 )
+from opentelemetry.trace import Span
 from tagging import detect_anomalies
+
 from tools import fake_responses
 
 

@@ -17,7 +17,7 @@ def _get_int(key: str, default: int) -> int:
     except ValueError:
         raise ValueError(
             f"Environment variable {key!r} must be an integer, got {raw!r}"
-        )
+        ) from None
 
 
 def _require(key: str) -> str:
@@ -51,7 +51,7 @@ class Settings:
     log_level: str
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         honeypot_phase = _get("HONEYPOT_PHASE", "research")
         if honeypot_phase not in _VALID_PHASES:
             raise ValueError(

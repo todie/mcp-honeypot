@@ -12,9 +12,7 @@ import pytest
 # Ensure the server package is importable without installing.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 
-import config  # noqa: E402  (after path manipulation)
 from config import Settings, _get, _get_int, _require  # noqa: E402
-
 
 # ======================================================================
 # Helpers — build env dicts for patch.dict

@@ -154,9 +154,12 @@ def detect_anomalies(
         state["hashes"][h] = now
 
     # --- exfiltration_chain ---
-    if tool_name in NETWORK_TOOLS and state["last_read_time"] is not None:
-        if (now - state["last_read_time"]) <= EXFIL_TTL_SECONDS:
-            flags.append("exfiltration_chain")
+    if (
+        tool_name in NETWORK_TOOLS
+        and state["last_read_time"] is not None
+        and (now - state["last_read_time"]) <= EXFIL_TTL_SECONDS
+    ):
+        flags.append("exfiltration_chain")
 
     if tool_name in READ_TOOLS:
         state["last_read_time"] = now

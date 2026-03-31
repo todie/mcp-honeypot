@@ -14,7 +14,6 @@ Usage::
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from typing import Any
 
@@ -269,7 +268,7 @@ class TelemetryHarness:
             return summary
 
         try:
-            loop = _asyncio.get_running_loop()
+            _asyncio.get_running_loop()
             # If we're in an async context, we can't use run()
             print("[TelemetryHarness] Cannot print_summary from async context; use await methods directly.")
             return

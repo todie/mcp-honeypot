@@ -14,7 +14,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
@@ -238,7 +237,7 @@ def _run_command(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def _run_python(params: dict[str, Any]) -> dict[str, Any]:
-    code = params.get("code", "")
+    _ = params.get("code", "")  # consumed by a real interpreter; ignored here
     # Simulate successful execution with a small stdout
     stdout_lines = [
         f"Python {random.choice(['3.12.3', '3.12.2', '3.11.9'])}",

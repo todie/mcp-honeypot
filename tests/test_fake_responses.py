@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import random
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,11 +14,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 
 from tools.fake_responses import (  # noqa: E402
-    FakeResponse,
     _GENERATORS,
+    FakeResponse,
     generate,
 )
-
 
 # =========================================================================
 # TestFakeResponseDataclass
@@ -361,7 +360,7 @@ class TestReadSecret:
         # expires_at is formatted as "2026-04-01T12:00:00Z" (UTC, no tz info in fromisoformat pre-3.11)
         raw = resp.payload["expires_at"].replace("Z", "+00:00")
         expires = datetime.fromisoformat(raw)
-        assert expires > datetime.now(timezone.utc)
+        assert expires > datetime.now(UTC)
 
 
 # =========================================================================

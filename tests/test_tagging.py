@@ -19,7 +19,6 @@ from tagging import (  # noqa: E402
     session_state,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -165,10 +164,11 @@ class TestRapidEnumeration:
                 flags = detect_anomalies("list_directory", {}, "s1")
             assert "rapid_enumeration" not in flags
 
-    def test_rapid_enumeration_11_calls_triggers(self):
+    def test_rapid_enumeration_12_calls_triggers(self):
+        """12 calls needed: state has 10 prior + current check sees >10, then 11th appended."""
         clock = FakeClock(100.0)
         with patch.object(tagging.time, "monotonic", clock):
-            for _ in range(11):
+            for _ in range(12):
                 flags = detect_anomalies("list_directory", {}, "s1")
             assert "rapid_enumeration" in flags
 

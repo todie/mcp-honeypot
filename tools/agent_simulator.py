@@ -14,8 +14,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import sys
 import os
+import sys
 import time
 from typing import Any
 
@@ -25,17 +25,11 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from tests.harness.mcp_client import McpTestClient
-from tests.harness.telemetry import TelemetryHarness
 from tests.harness.scenarios import (
     SCENARIOS,
-    credential_probe,
-    exfiltration_chain,
-    privilege_escalation,
-    rapid_enumeration,
-    path_traversal,
-    replay_attack,
     full_attack_sequence,
 )
+from tests.harness.telemetry import TelemetryHarness
 
 # ---------------------------------------------------------------------------
 # ANSI color helpers (no dependencies)
@@ -374,7 +368,7 @@ async def async_main(args: argparse.Namespace) -> int:
 
     client = McpTestClient(
         base_url=args.base_url,
-        user_agent=args.user_agent or f"AgentSimulator/1.0",
+        user_agent=args.user_agent or "AgentSimulator/1.0",
         client_info={"name": args.agent_name, "version": "1.0"},
     )
 

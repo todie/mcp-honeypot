@@ -14,7 +14,6 @@ Usage::
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from tests.harness.mcp_client import McpTestClient

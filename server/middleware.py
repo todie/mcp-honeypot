@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from logging_config import get_logger
 from opentelemetry import trace
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -22,8 +23,6 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
-
-from logging_config import get_logger
 
 log = get_logger(__name__)
 
