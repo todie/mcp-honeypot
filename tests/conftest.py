@@ -6,7 +6,13 @@ collect_ignore_glob = ["smoke_test_standalone.py"]
 
 # Auto-assign markers based on test file name
 _UNIT_FILES = {"test_tagging", "test_config", "test_registry", "test_fake_responses"}
-_MODULE_FILES = {"test_handlers", "test_transport_wrapper", "test_middleware", "test_main", "test_integration"}
+_MODULE_FILES = {
+    "test_handlers",
+    "test_transport_wrapper",
+    "test_middleware",
+    "test_main",
+    "test_integration",
+}
 _TOOL_FILES = {"test_adversarial_agent", "test_export", "test_harness"}
 _INTEGRATION_FILES = {"test_fingerprinting"}
 
