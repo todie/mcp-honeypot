@@ -115,8 +115,18 @@ class SecurityHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
+    # Paths that use raw ASGI streaming (SSE) — header wrapping breaks them.
+    _SKIP_PATHS: set[str] = {"/sse", "/messages"}
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        # Skip header injection for SSE/streaming endpoints — the MCP SDK
+        # manages its own ASGI response lifecycle on these paths.
+        path = scope.get("path", "")
+        if any(path.startswith(p) for p in self._SKIP_PATHS):
             await self.app(scope, receive, send)
             return
 
