@@ -9,10 +9,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy server source
-COPY . .
-
+# Create non-root user before COPY so --chown works
 RUN addgroup --system app && adduser --system --ingroup app app
+
+# Copy server source (owned by app user)
+COPY --chown=app:app . .
 
 EXPOSE 8000
 

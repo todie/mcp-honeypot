@@ -42,10 +42,12 @@ if [ -f helm/Chart.yaml ]; then
 fi
 
 # Update CHANGELOG.md — replace [Unreleased] header with new version + date
+# Uses printf for portable newline handling (BSD sed on macOS doesn't support \n)
 DATE=$(date +%Y-%m-%d)
-sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$NEW] - $DATE/" CHANGELOG.md
+NL=$'\n'
+sed -i "s/## \[Unreleased\]/## [Unreleased]${NL}${NL}## [$NEW] - $DATE/" CHANGELOG.md
 # Update the compare links at the bottom
-sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/todie/mcp-honeypot/compare/v$NEW...HEAD\n[$NEW]: https://github.com/todie/mcp-honeypot/compare/v$CURRENT...v$NEW|" CHANGELOG.md
+sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/todie/mcp-honeypot/compare/v$NEW...HEAD${NL}[$NEW]: https://github.com/todie/mcp-honeypot/compare/v$CURRENT...v$NEW|" CHANGELOG.md
 echo "    Updated CHANGELOG.md"
 
 # Commit and tag

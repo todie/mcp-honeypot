@@ -104,7 +104,7 @@ services:
       - ./dashboards/json:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana/data
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       prometheus:
         condition: service_started
