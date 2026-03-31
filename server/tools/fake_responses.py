@@ -312,7 +312,10 @@ def _list_secrets(params: dict[str, Any]) -> dict[str, Any]:
     ]
     if prefix:
         secret_names = [s for s in secret_names if s.startswith(prefix)]
-    selected = random.sample(secret_names, k=min(len(secret_names), random.randint(5, len(secret_names))))
+    pool_size = len(secret_names)
+    lo = min(3, pool_size)
+    hi = max(lo, pool_size)
+    selected = random.sample(secret_names, k=random.randint(lo, hi)) if pool_size > 0 else []
     keys = []
     for name in sorted(selected):
         keys.append({
