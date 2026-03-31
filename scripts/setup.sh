@@ -30,4 +30,11 @@ echo "==> Installing dependencies"
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -r server/requirements.txt
 
+echo "==> Installing dev tools"
+.venv/bin/pip install --quiet pre-commit ruff pyright
+
+echo "==> Setting up pre-commit hooks"
+.venv/bin/pre-commit install
+.venv/bin/pre-commit install --hook-type pre-push
+
 echo "==> Done. Activate with: source .venv/bin/activate"

@@ -40,6 +40,14 @@ test: ## Run pytest unit tests (no Docker)
 .PHONY: check
 check: lint test ## Run lint + test (full local CI)
 
+.PHONY: secrets
+secrets: ## Scan for leaked secrets (gitleaks)
+	gitleaks detect --source . --verbose
+
+.PHONY: pre-commit
+pre-commit: ## Run all pre-commit hooks on all files
+	pre-commit run --all-files
+
 # ── Docker ────────────────────────────────────────────────────────────────────
 
 .PHONY: build
@@ -76,7 +84,7 @@ smoke: ## Run smoke tests (stack must be running)
 	@./scripts/smoke.sh
 
 .PHONY: ci
-ci: lint test build ## Full CI pipeline locally (lint + test + build)
+ci: lint test secrets build ## Full CI pipeline locally (lint + test + secrets + build)
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 

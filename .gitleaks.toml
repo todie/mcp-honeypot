@@ -1,0 +1,14 @@
+[extend]
+# Use the default gitleaks ruleset
+useDefault = true
+
+[allowlist]
+# Fake responses module intentionally generates AKIA keys, sk- tokens, etc.
+paths = [
+    '''server/tools/fake_responses\.py''',
+    '''tests/test_fake_responses\.py''',
+]
+# .env.example has placeholder values, not real secrets
+files = [
+    '''\.env\.example''',
+]

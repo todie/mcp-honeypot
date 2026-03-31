@@ -25,8 +25,11 @@ jobs:
       - name: Install ruff
         run: pip install ruff
 
-      - name: Run ruff
+      - name: Ruff check
         run: ruff check server/ tests/
+
+      - name: Ruff format check
+        run: ruff format --check server/ tests/
 
   typecheck:
     name: Type-check (pyright)
@@ -77,3 +80,31 @@ jobs:
         env:
           PYTHONPATH: server
         run: pytest tests/ -v
+
+  secrets:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build server image
+        run: docker build -t mcp-honeypot:ci ./server
+
+      - name: Verify healthcheck endpoint
+        run: |
+          docker run -d --name honeypot-ci -p 8000:8000 mcp-honeypot:ci
+          sleep 3
+          curl -sf http://localhost:8000/healthz | grep -q '"status"'
+          docker stop honeypot-ci
