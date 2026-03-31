@@ -59,12 +59,13 @@ All variables are documented in [`.env.example`](.env.example).  Key ones:
 
 | Variable | Default | Description |
 |---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://otel-collector:4317` | OTLP gRPC endpoint |
-| `OTEL_SERVICE_NAME` | `mcp-honeypot` | Service name in traces/metrics |
-| `HONEYPOT_PORT` | `8000` | MCP server port |
-| `HONEYPOT_TRANSPORT` | `sse` | Transport mode: `sse` or `stdio` |
+| `OTLP_ENDPOINT` | `otel-collector:4317` | OTLP gRPC endpoint |
+| `OTLP_INSECURE` | `true` | Skip TLS for OTLP (only `false` disables) |
+| `SERVICE_NAME` | `mcp-honeypot` | Service name in traces/metrics |
+| `MCP_HOST` | `0.0.0.0` | MCP server bind address |
+| `MCP_PORT` | `8000` | MCP server port |
+| `HONEYPOT_PHASE` | `research` | Phase: `research` or `public` |
 | `LOG_LEVEL` | `INFO` | Structured log level |
-| `SESSION_EXFIL_TTL_SECONDS` | `120` | Window for exfiltration-chain detection |
 | `CORS_ORIGINS` | `*` | Allowed CORS origins (tighten in Phase 3) |
 | `GRAFANA_ADMIN_PASSWORD` | `honeypot` | Grafana admin password |
 

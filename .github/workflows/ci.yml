@@ -26,8 +26,7 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff
-        # Pass when tests/ does not exist yet; remove the '|| true' once tests/ is populated.
-        run: ruff check server/ tests/ || true
+        run: ruff check server/ tests/
 
   typecheck:
     name: Type-check (pyright)
@@ -75,10 +74,6 @@ jobs:
         run: pip install -r server/requirements.txt
 
       - name: Run pytest
-        # Exits 0 when tests/ is empty or missing; becomes a real gate once tests/ is populated.
-        run: |
-          if [ -d tests ] && compgen -G "tests/*.py" > /dev/null 2>&1; then
-            pytest tests/ -v
-          else
-            echo "No test files found -- skipping"
-          fi
+        env:
+          PYTHONPATH: server
+        run: pytest tests/ -v

@@ -20,18 +20,20 @@ import pytest
 class TestLoggingSetup:
     """Verify setup_logging() behaviour and session_id injection."""
 
-    def _clear_root_handlers(self):
-        """Remove all handlers from the root logger for test isolation."""
+    def _reset_logging(self):
+        """Remove all handlers and reset the idempotency guard for test isolation."""
         root = logging.getLogger()
         for handler in root.handlers[:]:
             root.removeHandler(handler)
             handler.close()
+        import logging_config
+        logging_config._configured = False
 
     def test_setup_logging_is_idempotent(self):
         """Calling setup_logging() twice must not add a second handler."""
         from logging_config import setup_logging
 
-        self._clear_root_handlers()
+        self._reset_logging()
         setup_logging()
         setup_logging()
         root = logging.getLogger()
@@ -43,7 +45,7 @@ class TestLoggingSetup:
         """When session_id_var is set, JSON log lines must include 'session_id'."""
         from logging_config import setup_logging, session_id_var
 
-        self._clear_root_handlers()
+        self._reset_logging()
         setup_logging()
 
         # Redirect the root handler's stream to a StringIO buffer
@@ -68,7 +70,7 @@ class TestLoggingSetup:
         """When session_id_var has no value, 'session_id' should be absent from the log."""
         from logging_config import setup_logging, session_id_var
 
-        self._clear_root_handlers()
+        self._reset_logging()
         setup_logging()
 
         root = logging.getLogger()
