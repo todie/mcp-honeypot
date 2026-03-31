@@ -599,9 +599,7 @@ class MCPSession:
             await asyncio.wait_for(self._sse_connected.wait(), timeout=self._timeout)
         except TimeoutError:
             await self.close()
-            raise TimeoutError(
-                f"Timed out waiting for SSE endpoint event from {self.base_url}/sse"
-            )
+            raise TimeoutError(f"Timed out waiting for SSE endpoint event from {self.base_url}/sse")
 
     async def _send_request(
         self, method: str, params: dict[str, Any] | None = None
@@ -654,13 +652,14 @@ class MCPSession:
             result = await asyncio.wait_for(future, timeout=self._timeout)
         except TimeoutError:
             self._pending.pop(msg_id, None)
-            return {"_error": True, "message": f"timeout waiting for {method} response (id={msg_id})"}
+            return {
+                "_error": True,
+                "message": f"timeout waiting for {method} response (id={msg_id})",
+            }
 
         return result
 
-    async def _send_notification(
-        self, method: str, params: dict[str, Any] | None = None
-    ) -> None:
+    async def _send_notification(self, method: str, params: dict[str, Any] | None = None) -> None:
         """Send a JSON-RPC notification (no id, no response expected)."""
         if not self._client or not self._endpoint:
             raise RuntimeError("Session not connected")
