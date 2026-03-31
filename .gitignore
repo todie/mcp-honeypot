@@ -33,10 +33,15 @@ venv.bak/
 
 # IDEs
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
+
+# VSCode — allow shared workspace config, ignore personal state
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
 
 # Testing
 .tox/
@@ -72,8 +77,7 @@ pids/
 *.seed
 *.pid.lock
 
-# Docker
-.dockerignore
+# Docker (volumes created by docker-compose)
 
 # Secrets / local overrides
 .env.local

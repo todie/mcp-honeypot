@@ -1,5 +1,8 @@
 # MCP Honeypot
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/todie/mcp-honeypot/actions/workflows/ci.yml/badge.svg)](https://github.com/todie/mcp-honeypot/actions/workflows/ci.yml)
+
 A research-grade honeypot for observing agentic attacks against MCP (Model Context Protocol) servers.
 It exposes plausible-looking fake tools -- filesystem access, secrets retrieval, web fetching, command
 execution -- while silently recording every call with full OpenTelemetry instrumentation.  The goal is
@@ -78,6 +81,21 @@ The honeypot tags every tool call with up to 7 anomaly flags:
 | `replay_attempt` | Same tool+params MD5 seen within 60 s |
 | `exfiltration_chain` | Read-family call → network-family call within TTL |
 | `privilege_escalation` | Tool category not seen before in this session |
+
+## Scripts
+
+All scripts are in `scripts/` and executable from the repo root:
+
+| Script | Purpose |
+|---|---|
+| `./scripts/setup.sh` | Create `.env`, Python venv, install deps |
+| `./scripts/lint.sh` | Ruff lint + format check + pyright strict |
+| `./scripts/test.sh` | Run pytest unit tests (no Docker) |
+| `./scripts/build.sh` | Build server Docker image |
+| `./scripts/up.sh` | Start full stack via Docker Compose |
+| `./scripts/down.sh` | Stop stack (`--clean` to remove volumes) |
+| `./scripts/smoke.sh` | Run smoke tests against running stack |
+| `./scripts/protect-main.sh` | Apply GitHub branch protection rules |
 
 ## Contributing
 

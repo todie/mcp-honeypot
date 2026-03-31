@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /server
+    schedule:
+      interval: weekly
+    assignees:
+      - todie
+
+  - package-ecosystem: docker
+    directory: /server
+    schedule:
+      interval: weekly
+    assignees:
+      - todie
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    assignees:
+      - todie

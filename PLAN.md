@@ -577,6 +577,86 @@ is done interactively. Sessions 2, 4 are lightly parallel (2–3 tasks each).
 
 ---
 
+## Administrative Tasks
+
+### T20 — LICENSE File
+**Complexity:** S
+**Depends on:** none
+**Files to create:**
+- `LICENSE`
+
+**Acceptance criteria:**
+- MIT or Apache-2.0 license (repo is public, currently has no license)
+- `README.md` updated with license badge if applicable
+
+---
+
+### T21 — .dockerignore
+**Complexity:** S
+**Depends on:** T01
+**Files to create:**
+- `server/.dockerignore`
+
+**Acceptance criteria:**
+- Excludes `.git/`, `docs/`, `tests/`, `.venv/`, `.vscode/`, `*.md`, `helm/`,
+  `dashboards/`, `scripts/`, `__pycache__/`, `.env*`
+- `docker build ./server` produces a minimal image without dev artifacts
+
+---
+
+### T22 — SECURITY.md
+**Complexity:** S
+**Depends on:** none
+**Files to create:**
+- `SECURITY.md`
+
+**Acceptance criteria:**
+- Responsible disclosure policy (email or GitHub Security Advisories)
+- Scope: what counts as a vulnerability in a honeypot project
+- Clarify that the honeypot is intentionally deceptive by design — that is not a bug
+
+---
+
+### T23 — Pre-commit Hooks
+**Complexity:** S
+**Depends on:** T01
+**Files to create:**
+- `.pre-commit-config.yaml`
+
+**Acceptance criteria:**
+- Hooks: `ruff check --fix`, `ruff format`, `pyright`, trailing-whitespace, end-of-file-fixer
+- `pre-commit install` sets up `.git/hooks/pre-commit`
+- `pre-commit run --all-files` passes on current codebase
+
+---
+
+### T24 — Dependabot Config
+**Complexity:** S
+**Depends on:** T01
+**Files to create:**
+- `.github/dependabot.yml`
+
+**Acceptance criteria:**
+- Monitors `pip` (server/requirements.txt) weekly
+- Monitors `docker` (server/Dockerfile base image) weekly
+- Monitors `github-actions` (.github/workflows/) weekly
+- Assignee set to repo owner
+
+---
+
+### T25 — Branch Consolidation
+**Complexity:** S
+**Depends on:** none
+**No files created — git operations only.**
+
+**Acceptance criteria:**
+- All work from `claude/eloquent-jennings` (T02, T08, T09) merged into working branch
+- `claude/priceless-diffie` deleted (superseded by current branch)
+- Stale `windows-worktree` remote removed from git config
+- Single clean branch ready for PR to main
+
+---
+
 ## Implementation Notes
 
 ### MCP SDK Usage
