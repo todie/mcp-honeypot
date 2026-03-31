@@ -53,7 +53,7 @@ NETWORK_TOOLS: set[str] = {"fetch_url", "search_web", "screenshot"}
 # network-family call is considered suspicious.  Reads from env so the
 # value can be overridden without touching code; falls back to 120 s.
 DEFAULT_EXFIL_TTL: int = 120
-_EXFIL_TTL: int = int(os.environ.get("SESSION_EXFIL_TTL_SECONDS", str(DEFAULT_EXFIL_TTL)))
+_EXFIL_TTL: int = max(0, int(os.environ.get("SESSION_EXFIL_TTL_SECONDS", str(DEFAULT_EXFIL_TTL))))
 
 # Rapid-enumeration thresholds
 _RAPID_WINDOW_SECS: float = 5.0

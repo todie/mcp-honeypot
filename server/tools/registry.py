@@ -22,7 +22,7 @@ class ToolMeta:
 
 
 # ---------------------------------------------------------------------------
-# Tool definitions — 14 tools across 4 categories
+# Tool definitions — 13 tools across 4 categories
 # ---------------------------------------------------------------------------
 
 TOOL_REGISTRY: dict[str, ToolMeta] = {
