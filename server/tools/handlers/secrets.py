@@ -35,7 +35,7 @@ async def handle(
         span.set_attribute("anomaly.flags", ",".join(flags) if flags else "")
 
         # 3. Metrics — tool call counter
-        mcp_tool_calls_total.add(1, {"tool": tool_name})
+        mcp_tool_calls_total.add(1, {"tool": tool_name, "agent_id": session_id})
 
         # 4. Metrics — per-flag anomaly counters
         for flag in flags:
