@@ -1,15 +1,21 @@
 {
   "uid": "agent-drilldown",
-  "title": "Agent Drilldown",
-  "description": "Per-agent analysis of MCP honeypot interactions",
+  "title": "MCP Honeypot — Agent Drilldown",
+  "description": "Per-agent deep dive: timeline of tool calls, category analysis, anomaly flags, and linked Jaeger traces for a selected agent.",
   "tags": ["mcp-honeypot"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
+  "editable": true,
+  "style": "dark",
   "time": {
     "from": "now-1h",
     "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "24h"]
   },
   "templating": {
     "list": [
@@ -27,16 +33,124 @@
       }
     ]
   },
-  "annotations": {
-    "list": []
-  },
+  "annotations": { "list": [] },
   "panels": [
     {
       "id": 1,
-      "title": "Session Timeline",
-      "description": "Tool calls over time for the selected agent",
+      "title": "Agent ID",
+      "description": "Currently selected agent identifier",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\"})",
+          "legendFormat": "$agent_id",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "$agent_id",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "#5794F2", "value": null }]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "name",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Total Calls",
+      "description": "Total tool invocations by this agent",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\"}[$__range]))",
+          "legendFormat": "Calls",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "#FF9830", "value": null }]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Anomaly Flags Triggered",
+      "description": "Total anomaly flags raised by this agent",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{agent_id=\"$agent_id\"}[$__range]))",
+          "legendFormat": "Flags",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#F2495C", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 10,
+      "title": "Tool Call Timeline",
+      "description": "All tool calls by this agent over time, colored by tool category",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 3 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
@@ -47,37 +161,56 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "custom": {
             "drawStyle": "bars",
             "lineWidth": 1,
-            "fillOpacity": 80,
+            "fillOpacity": 85,
+            "gradientMode": "scheme",
             "pointSize": 5,
             "showPoints": "never",
             "stacking": { "mode": "normal", "group": "A" },
-            "spanNulls": false
+            "spanNulls": false,
+            "axisLabel": "",
+            "axisBorderShow": false
           },
-          "unit": "short",
-          "color": {
-            "mode": "palette-classic"
-          }
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "/(read_file|write_file|list_directory|delete_file)/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#73BF69" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/(fetch_url|web_search|http_request)/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#5794F2" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/(run_command|execute_script|shell_exec)/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "/(get_env|read_credentials|access_secrets)/" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2495C" } }]
+          }
+        ]
       },
       "options": {
         "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }
       }
     },
     {
-      "id": 2,
-      "title": "Tools Called",
-      "description": "Distribution of tool calls for the selected agent",
+      "id": 20,
+      "title": "Tool Usage Distribution",
+      "description": "Breakdown of tool calls by tool name",
       "type": "piechart",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 13 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (tool) (increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\"}[1h]))",
+          "expr": "sum by (tool) (increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\"}[$__range]))",
           "legendFormat": "{{tool}}",
           "refId": "A",
           "instant": true
@@ -85,33 +218,98 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          }
+          "noValue": "Waiting for data...",
+          "color": { "mode": "palette-classic" }
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "pieType": "donut",
         "legend": { "displayMode": "table", "placement": "right", "values": ["percent", "value"] },
+        "tooltip": { "mode": "single", "sort": "none" },
+        "displayLabels": ["percent"]
+      }
+    },
+    {
+      "id": 21,
+      "title": "Category Breakdown",
+      "description": "Tool calls grouped by category: filesystem, web, exec, secrets",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\", tool=~\"read_file|write_file|list_directory|delete_file\"}[$__range]))",
+          "legendFormat": "Filesystem",
+          "refId": "A",
+          "instant": true
+        },
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\", tool=~\"fetch_url|web_search|http_request\"}[$__range]))",
+          "legendFormat": "Web",
+          "refId": "B",
+          "instant": true
+        },
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\", tool=~\"run_command|execute_script|shell_exec\"}[$__range]))",
+          "legendFormat": "Exec",
+          "refId": "C",
+          "instant": true
+        },
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total{agent_id=\"$agent_id\", tool=~\"get_env|read_credentials|access_secrets\"}[$__range]))",
+          "legendFormat": "Secrets",
+          "refId": "D",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Filesystem" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#73BF69" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Web" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#5794F2" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Exec" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Secrets" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2495C" } }]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "vertical",
+        "xTickLabelRotation": 0,
+        "showValue": "always",
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom" },
         "tooltip": { "mode": "single", "sort": "none" }
       }
     },
     {
-      "id": 3,
-      "title": "Anomaly Flags Triggered",
-      "description": "Anomaly flags detected for the selected agent",
+      "id": 22,
+      "title": "Anomaly Flags Detail",
+      "description": "Flag name, count, and last occurrence for this agent",
       "type": "table",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 13 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total{agent_id=\"$agent_id\"}[1h]))",
+          "expr": "sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total{agent_id=\"$agent_id\"}[$__range]))",
           "legendFormat": "{{flag}}",
           "refId": "A",
           "format": "table",
@@ -120,23 +318,33 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "unit": "short",
           "custom": {
             "align": "auto",
-            "filterable": true
+            "filterable": true,
+            "cellOptions": { "type": "auto" }
           }
         },
         "overrides": [
           {
             "matcher": { "id": "byName", "options": "Time" },
+            "properties": [{ "id": "custom.hidden", "value": true }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "flag" },
             "properties": [
-              { "id": "custom.hidden", "value": true }
+              { "id": "displayName", "value": "Flag" },
+              { "id": "custom.width", "value": 180 }
             ]
           },
           {
             "matcher": { "id": "byName", "options": "Value" },
             "properties": [
-              { "id": "displayName", "value": "Count" }
+              { "id": "displayName", "value": "Count" },
+              { "id": "custom.width", "value": 80 },
+              { "id": "color", "value": { "mode": "continuous-reds" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } }
             ]
           }
         ]
@@ -144,27 +352,24 @@
       "options": {
         "showHeader": true,
         "sortBy": [{ "displayName": "Count", "desc": true }],
-        "footer": { "show": false }
+        "footer": { "show": true, "reducer": ["sum"], "fields": ["Value"] }
       },
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": { "Time": true },
-            "renameByName": {
-              "flag": "Anomaly Flag",
-              "Value": "Count"
-            }
+            "renameByName": { "flag": "Flag", "Value": "Count" }
           }
         }
       ]
     },
     {
-      "id": 4,
-      "title": "Jaeger Trace Links",
-      "description": "Recent traces for the selected agent — click to open in Jaeger",
+      "id": 30,
+      "title": "Jaeger Traces",
+      "description": "Recent traces for this agent — click trace ID to open in Jaeger",
       "type": "table",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
       "datasource": { "type": "jaeger", "uid": "jaeger" },
       "targets": [
         {
@@ -178,22 +383,53 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "custom": {
             "align": "auto",
-            "filterable": true
+            "filterable": true,
+            "cellOptions": { "type": "auto" }
           },
           "links": [
             {
-              "title": "View in Jaeger",
+              "title": "Open in Jaeger",
               "url": "http://localhost:16686/trace/${__data.fields.traceID}",
               "targetBlank": true
             }
           ]
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "traceID" },
+            "properties": [
+              { "id": "displayName", "value": "Trace ID" },
+              { "id": "custom.width", "value": 280 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#5794F2" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "operationName" },
+            "properties": [{ "id": "displayName", "value": "Operation" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration" },
+            "properties": [
+              { "id": "displayName", "value": "Duration" },
+              { "id": "unit", "value": "ms" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "startTime" },
+            "properties": [
+              { "id": "displayName", "value": "Timestamp" },
+              { "id": "unit", "value": "dateTimeAsIso" }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
+        "sortBy": [{ "displayName": "Timestamp", "desc": true }],
         "footer": { "show": false }
       }
     }

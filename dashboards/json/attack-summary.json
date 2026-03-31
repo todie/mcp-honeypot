@@ -1,223 +1,272 @@
 {
   "uid": "attack-summary",
-  "title": "Attack Summary",
-  "description": "High-level overview of MCP honeypot activity and anomalies",
+  "title": "MCP Honeypot — Attack Summary",
+  "description": "War-room overview of all MCP honeypot activity: request volume, anomaly flags, top agents, and alert status at a glance.",
   "tags": ["mcp-honeypot"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
+  "editable": true,
+  "style": "dark",
   "time": {
     "from": "now-1h",
     "to": "now"
   },
-  "templating": {
-    "list": []
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "24h"]
   },
-  "annotations": {
-    "list": []
-  },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
   "panels": [
     {
       "id": 1,
-      "title": "Total Requests (24h)",
+      "title": "Total Tool Calls",
+      "description": "Cumulative tool invocations across all agents",
       "type": "stat",
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total[24h]))",
+          "expr": "sum(increase(mcp_honeypot_mcp_tool_calls_total[$__range]))",
           "legendFormat": "Total",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 100 },
-              { "color": "red", "value": 500 }
+              { "color": "#FF9830", "value": null }
             ]
           },
-          "unit": "short"
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
-        "textMode": "auto"
+        "textMode": "auto",
+        "orientation": "auto"
       }
     },
     {
       "id": 2,
-      "title": "Active Sessions",
+      "title": "Active Anomaly Flags",
+      "description": "Total anomaly flags triggered in the current time range",
       "type": "stat",
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "count(count by (session_id) (mcp_honeypot_mcp_tool_calls_total))",
-          "legendFormat": "Sessions",
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total[$__range]))",
+          "legendFormat": "Anomalies",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null },
-              { "color": "yellow", "value": 10 },
-              { "color": "red", "value": 50 }
+              { "color": "#73BF69", "value": null },
+              { "color": "#F2495C", "value": 1 }
             ]
           },
-          "unit": "short"
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
         "justifyMode": "auto",
-        "textMode": "auto"
+        "textMode": "auto",
+        "orientation": "auto"
       }
     },
     {
       "id": 3,
-      "title": "Credential Probe Attempts",
+      "title": "Unique Agents Seen",
+      "description": "Distinct agent identities observed",
       "type": "stat",
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"credential_probe\"}[24h]))",
-          "legendFormat": "Credential Probes",
+          "expr": "count(count by (agent_id) (mcp_honeypot_mcp_tool_calls_total))",
+          "legendFormat": "Agents",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              { "color": "#5794F2", "value": null }
             ]
           },
+          "color": { "mode": "thresholds" },
           "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          }
+          "decimals": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
-        "textMode": "auto"
+        "textMode": "auto",
+        "orientation": "auto"
       }
     },
     {
       "id": 4,
-      "title": "Request Rate",
+      "title": "Avg Response Latency",
+      "description": "Mean fake-response latency across all tools",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_honeypot_mcp_response_latency_ms_sum[5m])) / sum(rate(mcp_honeypot_mcp_response_latency_ms_count[5m]))",
+          "legendFormat": "Latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FADE2A", "value": 10 },
+              { "color": "#F2495C", "value": 50 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 10,
+      "title": "Request Rate by Tool",
+      "description": "Stacked area showing per-tool request rate over time",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(mcp_honeypot_mcp_tool_calls_total[5m]))",
-          "legendFormat": "Requests/sec",
+          "expr": "sum by (tool) (rate(mcp_honeypot_mcp_tool_calls_total[5m]))",
+          "legendFormat": "{{tool}}",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 20,
+            "fillOpacity": 40,
+            "gradientMode": "scheme",
             "pointSize": 5,
-            "lineWidth": 2,
-            "showPoints": "auto",
-            "spanNulls": false
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "normal", "group": "A" },
+            "axisLabel": "",
+            "axisBorderShow": false
           },
           "unit": "reqps",
-          "color": {
-            "mode": "palette-classic"
-          }
+          "color": { "mode": "palette-classic" }
         },
         "overrides": []
       },
       "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }
       }
     },
     {
-      "id": 5,
-      "title": "Anomaly Rate",
+      "id": 11,
+      "title": "Anomaly Rate by Flag Type",
+      "description": "Stacked area of anomaly flags firing over time",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total[5m])) by (flag)",
+          "expr": "sum by (flag) (rate(mcp_honeypot_mcp_anomalies_total[5m]))",
           "legendFormat": "{{flag}}",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 20,
+            "fillOpacity": 40,
+            "gradientMode": "scheme",
             "pointSize": 5,
-            "lineWidth": 2,
-            "showPoints": "auto",
-            "spanNulls": false
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "mode": "normal", "group": "A" },
+            "axisLabel": "",
+            "axisBorderShow": false
           },
           "unit": "short",
           "color": {
-            "mode": "palette-classic"
+            "mode": "continuous-reds"
           }
         },
         "overrides": []
       },
       "options": {
         "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }
       }
     },
     {
-      "id": 6,
+      "id": 20,
       "title": "Top Tools Called",
+      "description": "Horizontal bar chart of the most invoked tools",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "topk(10, sum by (tool) (increase(mcp_honeypot_mcp_tool_calls_total[1h])))",
+          "expr": "topk(13, sum by (tool) (increase(mcp_honeypot_mcp_tool_calls_total[$__range])))",
           "legendFormat": "{{tool}}",
           "refId": "A",
           "format": "table",
@@ -226,8 +275,10 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
           },
           "unit": "short"
         },
@@ -236,8 +287,8 @@
       "options": {
         "orientation": "horizontal",
         "xTickLabelRotation": 0,
-        "showValue": "auto",
-        "barWidth": 0.8,
+        "showValue": "always",
+        "barWidth": 0.75,
         "groupWidth": 0.7,
         "stacking": "none",
         "legend": { "displayMode": "hidden" },
@@ -248,67 +299,192 @@
           "id": "organize",
           "options": {
             "excludeByName": { "Time": true },
-            "renameByName": { "Value": "Calls" }
+            "renameByName": { "tool": "Tool", "Value": "Calls" }
           }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "Calls", "desc": true }] }
         }
       ]
     },
     {
-      "id": 7,
-      "title": "Top Agents by Request Count",
+      "id": 21,
+      "title": "Top Agents",
+      "description": "Agent leaderboard with call counts, unique tools, and anomaly flags",
       "type": "table",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "topk(20, sum by (agent_id) (increase(mcp_honeypot_mcp_tool_calls_total[24h])))",
-          "legendFormat": "{{agent_id}}",
+          "expr": "topk(20, sum by (agent_id) (increase(mcp_honeypot_mcp_tool_calls_total[$__range])))",
+          "legendFormat": "",
           "refId": "A",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "count by (agent_id) (count by (agent_id, tool) (mcp_honeypot_mcp_tool_calls_total))",
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "sum by (agent_id) (increase(mcp_honeypot_mcp_anomalies_total[$__range]))",
+          "legendFormat": "",
+          "refId": "C",
           "format": "table",
           "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "unit": "short",
           "custom": {
             "align": "auto",
-            "filterable": true
+            "filterable": true,
+            "cellOptions": { "type": "auto" }
           }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Value" },
+            "matcher": { "id": "byName", "options": "agent_id" },
             "properties": [
-              { "id": "displayName", "value": "Requests" },
-              { "id": "custom.width", "value": 120 }
+              { "id": "displayName", "value": "Agent" },
+              { "id": "custom.width", "value": 160 },
+              { "id": "links", "value": [
+                {
+                  "title": "Drill down to agent",
+                  "url": "/d/agent-drilldown/mcp-honeypot-agent-drilldown?var-agent_id=${__data.fields.agent_id}",
+                  "targetBlank": false
+                }
+              ]}
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "Time" },
+            "matcher": { "id": "byName", "options": "Value #A" },
             "properties": [
-              { "id": "custom.hidden", "value": true }
+              { "id": "displayName", "value": "Calls" },
+              { "id": "custom.width", "value": 80 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #B" },
+            "properties": [
+              { "id": "displayName", "value": "Tools" },
+              { "id": "custom.width", "value": 70 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value #C" },
+            "properties": [
+              { "id": "displayName", "value": "Flags" },
+              { "id": "custom.width", "value": 70 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2495C" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } }
             ]
           }
         ]
       },
       "options": {
         "showHeader": true,
-        "sortBy": [{ "displayName": "Requests", "desc": true }],
+        "sortBy": [{ "displayName": "Calls", "desc": true }],
         "footer": { "show": false }
       },
       "transformations": [
         {
+          "id": "seriesToColumns",
+          "options": { "byField": "agent_id" }
+        },
+        {
           "id": "organize",
           "options": {
-            "excludeByName": { "Time": true },
-            "renameByName": {
-              "agent_id": "Agent",
-              "Value": "Requests"
-            }
+            "excludeByName": { "Time 1": true, "Time 2": true, "Time 3": true, "Time": true }
           }
         }
       ]
+    },
+    {
+      "id": 22,
+      "title": "Anomaly Distribution",
+      "description": "Breakdown of anomaly flags by type",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total[$__range]))",
+          "legendFormat": "{{flag}}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "color": { "mode": "continuous-reds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "pieType": "donut",
+        "legend": { "displayMode": "table", "placement": "bottom", "values": ["percent", "value"] },
+        "tooltip": { "mode": "single", "sort": "none" },
+        "displayLabels": ["percent"]
+      }
+    },
+    {
+      "id": 30,
+      "title": "Credential Probe Alert",
+      "description": "Fires red when credential probes are detected in the last 5 minutes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"credential_probe\"}[5m]))",
+          "legendFormat": "Credential Probes (5m)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FADE2A", "value": 1 },
+              { "color": "#F2495C", "value": 5 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "ALL CLEAR", "color": "#73BF69" }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "orientation": "horizontal"
+      }
     }
   ]
 }

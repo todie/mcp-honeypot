@@ -1,29 +1,202 @@
 {
   "uid": "anomaly-monitor",
-  "title": "Anomaly Monitor",
-  "description": "Real-time anomaly detection and alerting for MCP honeypot",
+  "title": "MCP Honeypot — Anomaly Monitor",
+  "description": "Security-focused real-time anomaly detection: alert status for credential probes, path traversals, rapid enumerations, and exfiltration chains with heatmap and correlation views.",
   "tags": ["mcp-honeypot"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
+  "editable": true,
+  "style": "dark",
   "time": {
     "from": "now-1h",
     "to": "now"
   },
-  "templating": {
-    "list": []
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "24h"]
   },
-  "annotations": {
-    "list": []
-  },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
   "panels": [
     {
       "id": 1,
+      "title": "Credential Probes (5m)",
+      "description": "Credential probe attempts in the last 5 minutes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"credential_probe\"}[5m])) or vector(0)",
+          "legendFormat": "Credential Probes",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FADE2A", "value": 1 },
+              { "color": "#F2495C", "value": 5 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "CLEAR", "color": "#73BF69" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Path Traversals (5m)",
+      "description": "Path traversal attempts in the last 5 minutes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"path_traversal\"}[5m])) or vector(0)",
+          "legendFormat": "Path Traversals",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FADE2A", "value": 1 },
+              { "color": "#FF9830", "value": 3 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "CLEAR", "color": "#73BF69" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Rapid Enumerations (5m)",
+      "description": "Rapid enumeration events in the last 5 minutes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"rapid_enumeration\"}[5m])) or vector(0)",
+          "legendFormat": "Rapid Enumerations",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FADE2A", "value": 1 },
+              { "color": "#F2495C", "value": 3 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "CLEAR", "color": "#73BF69" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Exfiltration Chains (5m)",
+      "description": "Exfiltration chain patterns detected in the last 5 minutes",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(mcp_honeypot_mcp_anomalies_total{flag=\"exfiltration_chain\"}[5m])) or vector(0)",
+          "legendFormat": "Exfiltration Chains",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#F2495C", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "CLEAR", "color": "#73BF69" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 10,
       "title": "Anomaly Heatmap",
-      "description": "Anomaly flags over time by type",
+      "description": "Anomaly flag intensity over time — brighter red indicates higher volume",
       "type": "heatmap",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
@@ -35,6 +208,7 @@
       ],
       "fieldConfig": {
         "defaults": {
+          "noValue": "Waiting for data...",
           "custom": {
             "hideFrom": { "tooltip": false, "viz": false, "legend": false }
           }
@@ -48,31 +222,141 @@
         },
         "color": {
           "mode": "scheme",
-          "scheme": "Oranges",
-          "steps": 64
+          "scheme": "Reds",
+          "steps": 128,
+          "fill": "#1a0000",
+          "min": 0
         },
         "cellGap": 1,
+        "cellRadius": 2,
         "yAxis": {
-          "axisPlacement": "left"
+          "axisPlacement": "left",
+          "axisLabel": "Flag Type"
         },
         "tooltip": {
           "show": true,
           "yHistogram": false
         },
-        "legend": { "show": true }
+        "legend": { "show": true },
+        "exemplars": { "color": "#F2495C" }
       }
     },
     {
-      "id": 2,
-      "title": "Top Anomaly Types",
-      "description": "Most frequent anomaly flags in the last hour",
-      "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 20,
+      "title": "All Anomaly Flags Over Time",
+      "description": "Individual time series for each flag type",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "topk(10, sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total[1h])))",
+          "expr": "sum by (flag) (rate(mcp_honeypot_mcp_anomalies_total[5m]))",
           "legendFormat": "{{flag}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "pointSize": 5,
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisBorderShow": false
+          },
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "credential_probe" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2495C" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "path_traversal" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "rapid_enumeration" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FADE2A" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "exfiltration_chain" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF3383" } }]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "max", "mean"] }
+      }
+    },
+    {
+      "id": 21,
+      "title": "Flag Co-occurrence (Stacked)",
+      "description": "Which anomaly flags fire together — stacked bars show overlap",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total[5m]))",
+          "legendFormat": "{{flag}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Waiting for data...",
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "credential_probe" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2495C" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "path_traversal" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "rapid_enumeration" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FADE2A" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "exfiltration_chain" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF3383" } }]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "vertical",
+        "xTickLabelRotation": -45,
+        "showValue": "auto",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "stacking": "normal",
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 30,
+      "title": "Recent Anomaly Events",
+      "description": "Detailed table of recent anomaly detections with agent, tool, and flag information",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(50, sum by (agent_id, tool, flag) (increase(mcp_honeypot_mcp_anomalies_total[5m])) > 0)",
+          "legendFormat": "",
           "refId": "A",
           "format": "table",
           "instant": true
@@ -80,201 +364,89 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "unit": "short"
+          "noValue": "Waiting for data...",
+          "unit": "short",
+          "custom": {
+            "align": "auto",
+            "filterable": true,
+            "cellOptions": { "type": "auto" }
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Time" },
+            "properties": [
+              { "id": "displayName", "value": "Detected At" },
+              { "id": "unit", "value": "dateTimeAsIso" },
+              { "id": "custom.width", "value": 180 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "agent_id" },
+            "properties": [
+              { "id": "displayName", "value": "Agent" },
+              { "id": "custom.width", "value": 160 },
+              { "id": "links", "value": [
+                {
+                  "title": "Drill down",
+                  "url": "/d/agent-drilldown/mcp-honeypot-agent-drilldown?var-agent_id=${__data.fields.agent_id}",
+                  "targetBlank": false
+                }
+              ]}
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "tool" },
+            "properties": [
+              { "id": "displayName", "value": "Tool" },
+              { "id": "custom.width", "value": 160 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "flag" },
+            "properties": [
+              { "id": "displayName", "value": "Anomaly Flag" },
+              { "id": "custom.width", "value": 180 },
+              { "id": "color", "value": { "mode": "continuous-reds" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [
+              { "id": "displayName", "value": "Count" },
+              { "id": "custom.width", "value": 80 },
+              { "id": "color", "value": { "mode": "continuous-reds" } },
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } }
+            ]
+          }
+        ]
       },
       "options": {
-        "orientation": "horizontal",
-        "xTickLabelRotation": 0,
-        "showValue": "auto",
-        "barWidth": 0.8,
-        "groupWidth": 0.7,
-        "stacking": "none",
-        "legend": { "displayMode": "hidden" },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Count", "desc": true }],
+        "footer": { "show": true, "reducer": ["sum"], "fields": ["Value"] }
       },
       "transformations": [
         {
           "id": "organize",
           "options": {
-            "excludeByName": { "Time": true },
+            "indexByName": {
+              "Time": 0,
+              "agent_id": 1,
+              "tool": 2,
+              "flag": 3,
+              "Value": 4
+            },
             "renameByName": {
-              "flag": "Anomaly Type",
+              "agent_id": "Agent",
+              "tool": "Tool",
+              "flag": "Anomaly Flag",
               "Value": "Count"
             }
           }
         }
       ]
-    },
-    {
-      "id": 3,
-      "title": "Path Traversal Attempts",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"path_traversal\"}[5m]))",
-          "legendFormat": "path_traversal",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "showPoints": "auto",
-            "spanNulls": false
-          },
-          "unit": "short",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "orange"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
-      }
-    },
-    {
-      "id": 4,
-      "title": "Credential Probes",
-      "description": "Credential probe rate with alert threshold",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"credential_probe\"}[5m]))",
-          "legendFormat": "credential_probe rate",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "showPoints": "auto",
-            "spanNulls": false,
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "unit": "short",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "red"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 5 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
-      },
-      "alert": {
-        "name": "CredentialProbeAlert",
-        "message": "Credential probe rate exceeded threshold (>5 in 5m)",
-        "conditions": [
-          {
-            "type": "query",
-            "query": { "params": ["A", "5m", "now"] },
-            "reducer": { "type": "sum", "params": [] },
-            "evaluator": { "type": "gt", "params": [5] },
-            "operator": { "type": "and" }
-          }
-        ],
-        "frequency": "1m",
-        "for": "5m",
-        "noDataState": "no_data",
-        "executionErrorState": "alerting",
-        "notifications": []
-      }
-    },
-    {
-      "id": 5,
-      "title": "Rapid Enumeration Events",
-      "description": "Rapid enumeration rate with alert threshold",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [
-        {
-          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"rapid_enumeration\"}[5m]))",
-          "legendFormat": "rapid_enumeration rate",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "showPoints": "auto",
-            "spanNulls": false,
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "unit": "short",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "yellow"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 3 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
-      },
-      "alert": {
-        "name": "RapidEnumerationAlert",
-        "message": "Rapid enumeration rate exceeded threshold (>3 in 5m)",
-        "conditions": [
-          {
-            "type": "query",
-            "query": { "params": ["A", "5m", "now"] },
-            "reducer": { "type": "sum", "params": [] },
-            "evaluator": { "type": "gt", "params": [3] },
-            "operator": { "type": "and" }
-          }
-        ],
-        "frequency": "1m",
-        "for": "5m",
-        "noDataState": "no_data",
-        "executionErrorState": "alerting",
-        "notifications": []
-      }
     }
   ]
 }
