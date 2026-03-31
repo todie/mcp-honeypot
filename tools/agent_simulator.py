@@ -35,23 +35,35 @@ from tests.harness.telemetry import TelemetryHarness
 # ANSI color helpers (no dependencies)
 # ---------------------------------------------------------------------------
 
+
 class C:
     """ANSI color codes."""
-    RESET   = "\033[0m"
-    BOLD    = "\033[1m"
-    DIM     = "\033[2m"
-    RED     = "\033[31m"
-    GREEN   = "\033[32m"
-    YELLOW  = "\033[33m"
-    BLUE    = "\033[34m"
+
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
     MAGENTA = "\033[35m"
-    CYAN    = "\033[36m"
-    WHITE   = "\033[37m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
 
     @staticmethod
     def disable() -> None:
-        for attr in ("RESET", "BOLD", "DIM", "RED", "GREEN", "YELLOW",
-                      "BLUE", "MAGENTA", "CYAN", "WHITE"):
+        for attr in (
+            "RESET",
+            "BOLD",
+            "DIM",
+            "RED",
+            "GREEN",
+            "YELLOW",
+            "BLUE",
+            "MAGENTA",
+            "CYAN",
+            "WHITE",
+        ):
             setattr(C, attr, "")
 
 
@@ -85,6 +97,7 @@ def dim(text: str) -> str:
 # Telemetry display
 # ---------------------------------------------------------------------------
 
+
 async def show_telemetry(harness: TelemetryHarness, label: str = "") -> None:
     """Query and display current telemetry state."""
     if label:
@@ -112,6 +125,7 @@ async def show_telemetry(harness: TelemetryHarness, label: str = "") -> None:
 # ---------------------------------------------------------------------------
 # Scenario runner
 # ---------------------------------------------------------------------------
+
 
 async def run_scenario(
     client: McpTestClient,
@@ -168,13 +182,20 @@ INTERACTIVE_MENU = f"""
 """
 
 SCENARIO_MAP = {
-    "1": "credential", "credential": "credential",
-    "2": "exfil", "exfil": "exfil",
-    "3": "escalation", "escalation": "escalation",
-    "4": "rapid", "rapid": "rapid",
-    "5": "traversal", "traversal": "traversal",
-    "6": "replay", "replay": "replay",
-    "7": "all", "all": "all",
+    "1": "credential",
+    "credential": "credential",
+    "2": "exfil",
+    "exfil": "exfil",
+    "3": "escalation",
+    "escalation": "escalation",
+    "4": "rapid",
+    "rapid": "rapid",
+    "5": "traversal",
+    "traversal": "traversal",
+    "6": "replay",
+    "replay": "replay",
+    "7": "all",
+    "all": "all",
 }
 
 
@@ -300,6 +321,7 @@ async def interactive_mode(
 # Summary table
 # ---------------------------------------------------------------------------
 
+
 async def print_final_summary(harness: TelemetryHarness) -> None:
     """Print a final summary table."""
     header("Final Summary")
@@ -338,6 +360,7 @@ async def print_final_summary(harness: TelemetryHarness) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 async def async_main(args: argparse.Namespace) -> int:
     """Async entry point."""
     if args.no_color:
@@ -355,6 +378,7 @@ async def async_main(args: argparse.Namespace) -> int:
 
     # Check health
     import httpx
+
     try:
         resp = await httpx.AsyncClient(timeout=5).get(f"{args.base_url}/healthz")
         if resp.status_code == 200:
@@ -397,6 +421,7 @@ async def async_main(args: argparse.Namespace) -> int:
     except Exception as exc:
         error(f"Error: {exc}")
         import traceback
+
         traceback.print_exc()
         return 1
     finally:
@@ -420,13 +445,15 @@ Examples:
         """,
     )
     parser.add_argument(
-        "--scenario", "-s",
+        "--scenario",
+        "-s",
         choices=list(SCENARIOS.keys()),
         default=None,
         help="Run a specific attack scenario (default: all)",
     )
     parser.add_argument(
-        "--interactive", "-i",
+        "--interactive",
+        "-i",
         action="store_true",
         help="Interactive mode with menu-driven tool selection",
     )

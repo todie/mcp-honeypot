@@ -30,6 +30,7 @@ log = get_logger(__name__)
 # Rate-limiter key function
 # ---------------------------------------------------------------------------
 
+
 def _client_ip(request: Request) -> str:
     """Extract the client IP from a Starlette request.
 
@@ -67,6 +68,7 @@ sse_limit = limiter.limit("10/minute")
 # Custom 429 handler — logs, sets span attribute, returns Retry-After
 # ---------------------------------------------------------------------------
 
+
 def _rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> Response:
     """Return a 429 response with ``Retry-After`` and record the event."""
     client = _client_ip(request)
@@ -101,6 +103,7 @@ def _rate_limit_exceeded(request: Request, exc: RateLimitExceeded) -> Response:
 # Security-headers middleware
 # ---------------------------------------------------------------------------
 
+
 class SecurityHeadersMiddleware:
     """ASGI middleware that injects security headers on every response."""
 
@@ -134,9 +137,7 @@ class SecurityHeadersMiddleware:
                 headers: list[tuple[bytes, bytes]] = list(message.get("headers", []))
 
                 # Remove any existing Server header.
-                headers = [
-                    (k, v) for k, v in headers if k.lower() != b"server"
-                ]
+                headers = [(k, v) for k, v in headers if k.lower() != b"server"]
 
                 # Append security headers.
                 for name, value in self.HEADERS.items():
@@ -152,6 +153,7 @@ class SecurityHeadersMiddleware:
 # ---------------------------------------------------------------------------
 # Public integration point
 # ---------------------------------------------------------------------------
+
 
 def add_middleware(app: Starlette) -> None:
     """Wire rate limiting, security headers, and CORS into *app*.

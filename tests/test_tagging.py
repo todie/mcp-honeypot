@@ -23,6 +23,7 @@ from tagging import (  # noqa: E402
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class FakeClock:
     """Controllable monotonic clock for time-sensitive tests."""
 
@@ -48,8 +49,8 @@ def _isolate():
 # TestCredentialProbe
 # ---------------------------------------------------------------------------
 
-class TestCredentialProbe:
 
+class TestCredentialProbe:
     def test_credential_probe_triggers_on_get_env_var(self):
         flags = detect_anomalies("get_env_var", {"key": "SECRET"}, "s1")
         assert "credential_probe" in flags
@@ -80,8 +81,8 @@ class TestCredentialProbe:
 # TestPathTraversal
 # ---------------------------------------------------------------------------
 
-class TestPathTraversal:
 
+class TestPathTraversal:
     def test_path_traversal_classic_dot_dot_slash(self):
         flags = detect_anomalies("read_file", {"path": "../../etc/passwd"}, "s1")
         assert "path_traversal" in flags
@@ -109,8 +110,8 @@ class TestPathTraversal:
 # TestParamObfuscation
 # ---------------------------------------------------------------------------
 
-class TestParamObfuscation:
 
+class TestParamObfuscation:
     def test_param_obfuscation_valid_b64_over_20(self):
         # "A" * 24 is valid base64 (decodes to 18 bytes of 0x00)
         encoded = "AAAAAAAAAAAAAAAAAAAAAAAA"
@@ -155,8 +156,8 @@ class TestParamObfuscation:
 # TestRapidEnumeration
 # ---------------------------------------------------------------------------
 
-class TestRapidEnumeration:
 
+class TestRapidEnumeration:
     def test_rapid_enumeration_10_calls_no_flag(self):
         clock = FakeClock(100.0)
         with patch.object(tagging.time, "monotonic", clock):
@@ -196,8 +197,8 @@ class TestRapidEnumeration:
 # TestReplayAttempt
 # ---------------------------------------------------------------------------
 
-class TestReplayAttempt:
 
+class TestReplayAttempt:
     def test_replay_same_call_within_60s(self):
         clock = FakeClock(100.0)
         with patch.object(tagging.time, "monotonic", clock):
@@ -243,8 +244,8 @@ class TestReplayAttempt:
 # TestExfiltrationChain
 # ---------------------------------------------------------------------------
 
-class TestExfiltrationChain:
 
+class TestExfiltrationChain:
     def test_exfiltration_read_then_fetch(self):
         clock = FakeClock(100.0)
         with patch.object(tagging.time, "monotonic", clock):
@@ -288,8 +289,8 @@ class TestExfiltrationChain:
 # TestPrivilegeEscalation
 # ---------------------------------------------------------------------------
 
-class TestPrivilegeEscalation:
 
+class TestPrivilegeEscalation:
     def test_privilege_escalation_first_call_no_flag(self):
         flags = detect_anomalies("read_file", {"path": "/tmp/a"}, "s1")
         assert "privilege_escalation" not in flags
@@ -305,8 +306,8 @@ class TestPrivilegeEscalation:
         assert "privilege_escalation" not in flags
 
     def test_privilege_escalation_all_four_categories_sequence(self):
-        detect_anomalies("read_file", {}, "s1")         # filesystem
-        f2 = detect_anomalies("fetch_url", {}, "s1")    # web
+        detect_anomalies("read_file", {}, "s1")  # filesystem
+        f2 = detect_anomalies("fetch_url", {}, "s1")  # web
         assert "privilege_escalation" in f2
         f3 = detect_anomalies("run_command", {}, "s1")  # exec
         assert "privilege_escalation" in f3
@@ -324,8 +325,8 @@ class TestPrivilegeEscalation:
 # TestSessionEviction
 # ---------------------------------------------------------------------------
 
-class TestSessionEviction:
 
+class TestSessionEviction:
     def test_session_active_within_1h_not_evicted(self):
         clock = FakeClock(100.0)
         with patch.object(tagging.time, "monotonic", clock):
@@ -360,8 +361,8 @@ class TestSessionEviction:
 # TestHelpers
 # ---------------------------------------------------------------------------
 
-class TestHelpers:
 
+class TestHelpers:
     def test_is_plausible_base64_valid(self):
         assert _is_plausible_base64("SGVsbG8gV29ybGQ=") is True
 
@@ -384,8 +385,8 @@ class TestHelpers:
 # TestResetState
 # ---------------------------------------------------------------------------
 
-class TestResetState:
 
+class TestResetState:
     def test_reset_state_clears_session_state(self):
         detect_anomalies("read_file", {}, "s1")
         assert len(session_state) > 0

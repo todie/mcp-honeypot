@@ -22,8 +22,14 @@ FILESYSTEM_TOOLS = {"read_file", "write_file", "list_directory", "delete_file"}
 WEB_TOOLS = {"fetch_url", "search_web", "screenshot"}
 EXEC_TOOLS = {"run_command", "run_python"}
 
-READ_TOOLS = {"read_file", "list_directory", "get_env_var", "read_secret",
-              "list_secrets", "get_api_key"}
+READ_TOOLS = {
+    "read_file",
+    "list_directory",
+    "get_env_var",
+    "read_secret",
+    "list_secrets",
+    "get_api_key",
+}
 NETWORK_TOOLS = {"fetch_url", "search_web", "screenshot"}
 
 CATEGORY_MAP: dict[str, str] = {}
@@ -40,20 +46,21 @@ for _tool in EXEC_TOOLS:
 # Tunables
 # ---------------------------------------------------------------------------
 RAPID_WINDOW_SECONDS = 5.0
-RAPID_THRESHOLD = 10          # flag when count EXCEEDS this
+RAPID_THRESHOLD = 10  # flag when count EXCEEDS this
 REPLAY_TTL_SECONDS = 60.0
-EXFIL_TTL_SECONDS = 300.0     # read→network chain window
+EXFIL_TTL_SECONDS = 300.0  # read→network chain window
 SESSION_EVICT_SECONDS = 3600.0  # 1 hour
 
 # ---------------------------------------------------------------------------
 # Per-session state
 # ---------------------------------------------------------------------------
 
+
 def _new_session() -> dict[str, Any]:
     return {
-        "calls": [],            # list of {"tool": str, "time": float}
-        "hashes": {},           # call_hash → last_seen_time
-        "last_read_time": None, # monotonic time of last READ_TOOLS call
+        "calls": [],  # list of {"tool": str, "time": float}
+        "hashes": {},  # call_hash → last_seen_time
+        "last_read_time": None,  # monotonic time of last READ_TOOLS call
         "categories_seen": set(),
         "last_active": time.monotonic(),
     }
@@ -70,6 +77,7 @@ def reset_state() -> None:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _is_plausible_base64(value: str) -> bool:
     """Return True if *value* successfully base64-decodes."""
@@ -93,6 +101,7 @@ def _call_hash(tool_name: str, params: dict[str, Any]) -> str:
 # Eviction
 # ---------------------------------------------------------------------------
 
+
 def _maybe_evict(session_id: str, now: float) -> None:
     state = session_state.get(session_id)
     if state is None:
@@ -104,6 +113,7 @@ def _maybe_evict(session_id: str, now: float) -> None:
 # ---------------------------------------------------------------------------
 # Core detection
 # ---------------------------------------------------------------------------
+
 
 def detect_anomalies(
     tool_name: str,

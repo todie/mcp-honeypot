@@ -51,13 +51,16 @@ _stack_up = _port_open("localhost", 8000) and _port_open("localhost", 16686)
 
 pytestmark = [
     pytest.mark.integration,
-    pytest.mark.skipif(not _stack_up, reason="Docker Compose stack not running on localhost:8000/16686"),
+    pytest.mark.skipif(
+        not _stack_up, reason="Docker Compose stack not running on localhost:8000/16686"
+    ),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _jsonrpc(method: str, params: dict[str, Any] | None = None, id: int = 1) -> dict[str, Any]:
     """Build a JSON-RPC 2.0 request dict."""
@@ -201,9 +204,7 @@ class TestAgentFingerprinting:
         )
 
         found = _poll_jaeger_for_attribute("mcp-honeypot", "agent.id", expected_value=ua)
-        assert found == ua, (
-            f"Expected agent.id=={ua!r} in Jaeger spans but got {found!r}"
-        )
+        assert found == ua, f"Expected agent.id=={ua!r} in Jaeger spans but got {found!r}"
 
     def test_mcp_initialize_client_info(self) -> None:
         """clientInfo in the MCP initialize message should override the
@@ -220,7 +221,9 @@ class TestAgentFingerprinting:
         )
 
         found = _poll_jaeger_for_attribute(
-            "mcp-honeypot", "agent.id", expected_value=expected_agent_id,
+            "mcp-honeypot",
+            "agent.id",
+            expected_value=expected_agent_id,
         )
         assert found == expected_agent_id, (
             f"Expected agent.id=={expected_agent_id!r} in Jaeger spans but got {found!r}"

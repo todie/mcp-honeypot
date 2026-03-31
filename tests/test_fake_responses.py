@@ -60,6 +60,7 @@ class TestNeverRaise:
     @pytest.mark.asyncio
     async def test_generator_exception_returns_error_type(self):
         """If a generator raises, generate() catches it and returns type='error'."""
+
         def _exploding_generator(params):
             raise ZeroDivisionError("boom")
 

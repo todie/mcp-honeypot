@@ -160,6 +160,7 @@ async def handle_messages(request: Request) -> None:
 # Health check
 # ---------------------------------------------------------------------------
 
+
 @limiter.exempt
 async def healthz(request: Request) -> JSONResponse:
     """``GET /healthz`` — lightweight liveness probe."""

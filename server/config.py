@@ -15,9 +15,7 @@ def _get_int(key: str, default: int) -> int:
     try:
         return int(raw)
     except ValueError:
-        raise ValueError(
-            f"Environment variable {key!r} must be an integer, got {raw!r}"
-        ) from None
+        raise ValueError(f"Environment variable {key!r} must be an integer, got {raw!r}") from None
 
 
 def _require(key: str) -> str:
@@ -60,9 +58,7 @@ class Settings:
 
         log_level = _get("LOG_LEVEL", "INFO").upper()
         if log_level not in _VALID_LOG_LEVELS:
-            raise ValueError(
-                f"LOG_LEVEL must be one of {_VALID_LOG_LEVELS}, got {log_level!r}"
-            )
+            raise ValueError(f"LOG_LEVEL must be one of {_VALID_LOG_LEVELS}, got {log_level!r}")
 
         mcp_port = _get_int("MCP_PORT", 8000)
         if not (1 <= mcp_port <= 65535):

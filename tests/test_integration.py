@@ -24,6 +24,7 @@ class TestLoggingSetup:
             root.removeHandler(handler)
             handler.close()
         import logging_config
+
         logging_config._configured = False
 
     def test_setup_logging_is_idempotent(self):
@@ -82,9 +83,7 @@ class TestLoggingSetup:
         output = buf.getvalue()
         if output.strip():
             record = json.loads(output.strip().splitlines()[-1])
-            assert "session_id" not in record, (
-                f"session_id should be absent but found: {record}"
-            )
+            assert "session_id" not in record, f"session_id should be absent but found: {record}"
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +102,7 @@ class TestInstrumentation:
         setup_telemetry()  # second call should be a no-op
         # Re-import to pick up the current module-level value
         import instrumentation
+
         assert instrumentation._telemetry_initialised is True
 
     def test_get_tracer_returns_tracer_object(self):
@@ -113,6 +113,4 @@ class TestInstrumentation:
         tracer = get_tracer("test")
         assert tracer is not None, "get_tracer('test') returned None"
         # The object should have a start_span method (duck-type check)
-        assert hasattr(tracer, "start_span"), (
-            f"Tracer object missing start_span: {type(tracer)}"
-        )
+        assert hasattr(tracer, "start_span"), f"Tracer object missing start_span: {type(tracer)}"

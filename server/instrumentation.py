@@ -96,6 +96,7 @@ def setup_telemetry() -> None:
 # Convenience accessors
 # ---------------------------------------------------------------------------
 
+
 def get_tracer(name: str) -> Tracer:
     """Return a tracer from the global provider."""
     return trace.get_tracer(name)

@@ -27,9 +27,7 @@ class TestRegistryCompleteness:
 
     def test_each_toolmeta_name_matches_dict_key(self):
         for key, meta in TOOL_REGISTRY.items():
-            assert meta.name == key, (
-                f"Key {key!r} does not match ToolMeta.name {meta.name!r}"
-            )
+            assert meta.name == key, f"Key {key!r} does not match ToolMeta.name {meta.name!r}"
 
     def test_each_category_is_valid(self):
         for key, meta in TOOL_REGISTRY.items():

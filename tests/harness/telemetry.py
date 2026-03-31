@@ -270,7 +270,9 @@ class TelemetryHarness:
         try:
             _asyncio.get_running_loop()
             # If we're in an async context, we can't use run()
-            print("[TelemetryHarness] Cannot print_summary from async context; use await methods directly.")
+            print(
+                "[TelemetryHarness] Cannot print_summary from async context; use await methods directly."
+            )
             return
         except RuntimeError:
             pass

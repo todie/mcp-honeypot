@@ -32,6 +32,7 @@ tracer = get_tracer("mcp-honeypot.transport")
 # Session ID derivation
 # ---------------------------------------------------------------------------
 
+
 def derive_session_id(remote_ip: str, connect_ts: float) -> str:
     """SHA-256 of ``remote_ip:connect_timestamp``, first 16 hex chars."""
     raw = f"{remote_ip}:{connect_ts}"
@@ -41,6 +42,7 @@ def derive_session_id(remote_ip: str, connect_ts: float) -> str:
 # ---------------------------------------------------------------------------
 # Agent fingerprinting
 # ---------------------------------------------------------------------------
+
 
 def _extract_agent_from_user_agent(headers: list[tuple[bytes, bytes]]) -> str | None:
     """Pull the User-Agent value from raw ASGI headers, if present."""
@@ -69,6 +71,7 @@ def _extract_agent_from_initialize(message: dict[str, Any]) -> str | None:
 # InstrumentedTransport
 # ---------------------------------------------------------------------------
 
+
 class InstrumentedTransport:
     """Wraps an MCP SSE connection to add per-message tracing.
 
@@ -93,9 +96,7 @@ class InstrumentedTransport:
 
         # Best-effort agent ID from the HTTP headers; may be refined later
         # when the MCP ``initialize`` message arrives.
-        self._agent_id: str = (
-            _extract_agent_from_user_agent(headers) or self.session_id
-        )
+        self._agent_id: str = _extract_agent_from_user_agent(headers) or self.session_id
         self._agent_id_refined: bool = False
 
     @property

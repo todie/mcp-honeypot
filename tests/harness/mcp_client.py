@@ -136,7 +136,9 @@ class McpTestClient:
             if session_ids:
                 self._session_id = session_ids[0]
 
-            logger.info("SSE endpoint received: %s (session=%s)", self._endpoint_url, self._session_id)
+            logger.info(
+                "SSE endpoint received: %s (session=%s)", self._endpoint_url, self._session_id
+            )
             self._sse_connected.set()
 
         elif event_type == "message":
@@ -201,11 +203,14 @@ class McpTestClient:
             raise RuntimeError("Not connected -- call connect() first")
 
         # Send initialize request
-        response = await self._send_request("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": self._client_info,
-        })
+        response = await self._send_request(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": self._client_info,
+            },
+        )
 
         # Send notifications/initialized (no id -- it's a notification)
         await self._send_notification("notifications/initialized")
@@ -315,9 +320,7 @@ class McpTestClient:
             result = await asyncio.wait_for(future, timeout=self._timeout)
         except TimeoutError:
             self._pending.pop(msg_id, None)
-            raise TimeoutError(
-                f"Timed out waiting for response to {method} (id={msg_id})"
-            )
+            raise TimeoutError(f"Timed out waiting for response to {method} (id={msg_id})")
 
         # Check for JSON-RPC error
         if "error" in result:
@@ -346,5 +349,7 @@ class McpTestClient:
         if resp.status_code not in (200, 202):
             logger.warning(
                 "Notification %s got status %d: %s",
-                method, resp.status_code, resp.text[:200],
+                method,
+                resp.status_code,
+                resp.text[:200],
             )

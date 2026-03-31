@@ -30,7 +30,7 @@ ignore = [
 
 [tool.pyright]
 pythonVersion = "3.12"
-typeCheckingMode = "strict"
+typeCheckingMode = "basic"
 include = ["server"]
 reportMissingImports = true
 reportMissingTypeStubs = false

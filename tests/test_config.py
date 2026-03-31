@@ -31,6 +31,7 @@ def _env(**overrides: str) -> dict[str, str]:
 # TestDefaults
 # ======================================================================
 
+
 class TestDefaults:
     """All defaults with empty / minimal env produce valid Settings."""
 
@@ -59,6 +60,7 @@ class TestDefaults:
 # ======================================================================
 # TestPhaseValidation
 # ======================================================================
+
 
 class TestPhaseValidation:
     """HONEYPOT_PHASE must be a recognized value; 'public' needs a secret."""
@@ -93,6 +95,7 @@ class TestPhaseValidation:
 # TestWebhookSecret
 # ======================================================================
 
+
 class TestWebhookSecret:
     """webhook_secret is populated only in public phase."""
 
@@ -114,6 +117,7 @@ class TestWebhookSecret:
 # ======================================================================
 # TestLogLevel
 # ======================================================================
+
 
 class TestLogLevel:
     """LOG_LEVEL is uppercased and validated."""
@@ -137,6 +141,7 @@ class TestLogLevel:
 # ======================================================================
 # TestPortValidation
 # ======================================================================
+
 
 class TestPortValidation:
     """MCP_PORT must be a valid integer in [1, 65535]."""
@@ -176,6 +181,7 @@ class TestPortValidation:
 # TestOtlpInsecure
 # ======================================================================
 
+
 class TestOtlpInsecure:
     """OTLP_INSECURE is True unless explicitly set to 'false'."""
 
@@ -210,6 +216,7 @@ class TestOtlpInsecure:
 # TestGetHelper
 # ======================================================================
 
+
 class TestGetHelper:
     """Tests for the ``_get`` env-var helper."""
 
@@ -229,6 +236,7 @@ class TestGetHelper:
 # ======================================================================
 # TestGetIntHelper
 # ======================================================================
+
 
 class TestGetIntHelper:
     """Tests for the ``_get_int`` env-var helper."""
@@ -250,6 +258,7 @@ class TestGetIntHelper:
 # ======================================================================
 # TestRequireHelper
 # ======================================================================
+
 
 class TestRequireHelper:
     """Tests for the ``_require`` env-var helper."""
