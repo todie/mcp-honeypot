@@ -1,0 +1,32 @@
+# MCP SDK (official Anthropic)
+mcp==1.6.0
+
+# ASGI server
+uvicorn[standard]==0.34.0
+starlette==0.46.1
+
+# OpenTelemetry — SDK
+opentelemetry-sdk==1.32.0
+opentelemetry-api==1.32.0
+
+# OpenTelemetry — OTLP exporter (gRPC, for sending to collector)
+opentelemetry-exporter-otlp-proto-grpc==1.32.0
+
+# OpenTelemetry — instrumentation helpers
+opentelemetry-instrumentation==0.53b0
+opentelemetry-instrumentation-asgi==0.53b0
+
+# Configuration via environment variables
+pydantic-settings==2.8.1
+pydantic==2.11.1
+
+# Structured logging
+structlog==25.1.0
+
+# Rate limiting (T18)
+slowapi==0.1.9
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.25.3
+httpx==0.28.1

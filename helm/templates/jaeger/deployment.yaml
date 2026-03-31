@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-honeypot.fullname" . }}-jaeger
+  labels:
+    {{- include "mcp-honeypot.componentFullLabels" (dict "component" "jaeger" "root" .) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "mcp-honeypot.componentLabels" (dict "component" "jaeger" "root" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mcp-honeypot.componentLabels" (dict "component" "jaeger" "root" .) | nindent 8 }}
+    spec:
+      containers:
+        - name: jaeger
+          image: "{{ .Values.jaeger.image.repository }}:{{ .Values.jaeger.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+            - name: SPAN_STORAGE_TYPE
+              value: badger
+            - name: BADGER_EPHEMERAL
+              value: "false"
+            - name: BADGER_DIRECTORY_VALUE
+              value: /badger/data
+            - name: BADGER_DIRECTORY_KEY
+              value: /badger/key
+          ports:
+            - name: ui
+              containerPort: {{ .Values.jaeger.uiPort }}
+              protocol: TCP
+            - name: otlp-grpc
+              containerPort: {{ .Values.jaeger.otlpGrpcPort }}
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /badger
+          resources:
+            {{- toYaml .Values.jaeger.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: ui
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: ui
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "mcp-honeypot.fullname" . }}-jaeger

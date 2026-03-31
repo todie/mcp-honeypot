@@ -1,0 +1,280 @@
+{
+  "uid": "anomaly-monitor",
+  "title": "Anomaly Monitor",
+  "description": "Real-time anomaly detection and alerting for MCP honeypot",
+  "tags": ["mcp-honeypot"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Anomaly Heatmap",
+      "description": "Anomaly flags over time by type",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total[5m]))",
+          "legendFormat": "{{flag}}",
+          "refId": "A",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": { "tooltip": false, "viz": false, "legend": false }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "calculate": true,
+        "calculation": {
+          "xBuckets": { "mode": "size", "value": "5m" }
+        },
+        "color": {
+          "mode": "scheme",
+          "scheme": "Oranges",
+          "steps": 64
+        },
+        "cellGap": 1,
+        "yAxis": {
+          "axisPlacement": "left"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "legend": { "show": true }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Top Anomaly Types",
+      "description": "Most frequent anomaly flags in the last hour",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (flag) (increase(mcp_honeypot_mcp_anomalies_total[1h])))",
+          "legendFormat": "{{flag}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "showValue": "auto",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "stacking": "none",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": {
+              "flag": "Anomaly Type",
+              "Value": "Count"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Path Traversal Attempts",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"path_traversal\"}[5m]))",
+          "legendFormat": "path_traversal",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Credential Probes",
+      "description": "Credential probe rate with alert threshold",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"credential_probe\"}[5m]))",
+          "legendFormat": "credential_probe rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "alert": {
+        "name": "CredentialProbeAlert",
+        "message": "Credential probe rate exceeded threshold (>5 in 5m)",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "type": "sum", "params": [] },
+            "evaluator": { "type": "gt", "params": [5] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "1m",
+        "for": "5m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "id": 5,
+      "title": "Rapid Enumeration Events",
+      "description": "Rapid enumeration rate with alert threshold",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(mcp_honeypot_mcp_anomalies_total{flag=\"rapid_enumeration\"}[5m]))",
+          "legendFormat": "rapid_enumeration rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 3 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "single", "sort": "none" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "alert": {
+        "name": "RapidEnumerationAlert",
+        "message": "Rapid enumeration rate exceeded threshold (>3 in 5m)",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "type": "sum", "params": [] },
+            "evaluator": { "type": "gt", "params": [3] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "1m",
+        "for": "5m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    }
+  ]
+}

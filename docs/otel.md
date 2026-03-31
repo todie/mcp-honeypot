@@ -41,8 +41,8 @@
       prometheus:
         endpoint: "0.0.0.0:8889"
         namespace: mcp_honeypot
-      jaeger:
-        endpoint: jaeger:14250
+      otlp/jaeger:
+        endpoint: jaeger:4317
         tls:
           insecure: true
 
@@ -51,7 +51,7 @@
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [jaeger]
+          exporters: [otlp/jaeger]
         metrics:
           receivers: [otlp]
           processors: [memory_limiter, batch]

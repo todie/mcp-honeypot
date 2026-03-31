@@ -1,0 +1,8 @@
+apiVersion: v2
+name: mcp-honeypot
+description: Research-grade honeypot for observing agentic attacks against MCP servers
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: Christian M. Todie

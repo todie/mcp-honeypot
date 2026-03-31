@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mcp-honeypot.fullname" . }}-grafana
+  labels:
+    {{- include "mcp-honeypot.componentFullLabels" (dict "component" "grafana" "root" .) | nindent 4 }}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://{{ include "mcp-honeypot.fullname" . }}-prometheus:{{ .Values.prometheus.port }}
+        isDefault: true
+        editable: false
+      - name: Jaeger
+        type: jaeger
+        access: proxy
+        url: http://{{ include "mcp-honeypot.fullname" . }}-jaeger:{{ .Values.jaeger.uiPort }}
+        editable: false
+
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: MCP Honeypot
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false

@@ -1,0 +1,73 @@
+{
+  // Python
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.extraPaths": ["${workspaceFolder}/server"],
+
+  // Ruff (linter + formatter)
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  "ruff.configuration": "${workspaceFolder}/pyproject.toml",
+  "ruff.lint.run": "onSave",
+
+  // Testing
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests/", "-v"],
+  "python.testing.unittestEnabled": false,
+
+  // Files
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    ".ruff_cache": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true
+  },
+  "files.watcherExclude": {
+    "**/prometheus-data/**": true,
+    "**/jaeger-data/**": true,
+    "**/grafana-data/**": true
+  },
+  "files.associations": {
+    "*.yaml": "yaml",
+    "*.yml": "yaml",
+    "docker-compose*.yaml": "dockercompose",
+    "prometheus.yml": "yaml",
+    "collector/config.yaml": "yaml"
+  },
+
+  // YAML
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml",
+    "https://json.schemastore.org/docker-compose.json": "docker-compose*.yaml"
+  },
+
+  // Docker
+  "docker.defaultRegistryPath": "",
+
+  // Editor
+  "editor.rulers": [100],
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.renderWhitespace": "boundary",
+
+  // Search
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/prometheus-data": true,
+    "**/jaeger-data": true,
+    "**/grafana-data": true,
+    "dashboards/json/*.json": false
+  },
+
+  // Terminal
+  "terminal.integrated.defaultProfile.linux": "bash"
+}

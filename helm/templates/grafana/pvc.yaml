@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mcp-honeypot.fullname" . }}-grafana
+  labels:
+    {{- include "mcp-honeypot.componentFullLabels" (dict "component" "grafana" "root" .) | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.grafana.storageClassName }}
+  storageClassName: {{ .Values.grafana.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.grafana.storage }}

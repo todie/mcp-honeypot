@@ -1,0 +1,38 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    limit_mib: 512
+    check_interval: 5s
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  # Forward traces to Jaeger via OTLP gRPC (native, replaces deprecated jaeger exporter)
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Expose metrics for Prometheus scraping
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: mcp_honeypot
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
