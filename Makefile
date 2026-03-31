@@ -79,12 +79,36 @@ restart: down up ## Restart the full stack
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 
+.PHONY: test-unit
+test-unit: ## Run fast unit tests only (~135 tests)
+	PYTHONPATH=server pytest tests/ -m unit -v --tb=short
+
+.PHONY: test-module
+test-module: ## Run server module tests (~50 tests)
+	PYTHONPATH=server pytest tests/ -m module -v --tb=short
+
+.PHONY: test-tools
+test-tools: ## Run tool/harness tests (~50 tests)
+	PYTHONPATH=server pytest tests/ -m tools -v --tb=short
+
+.PHONY: test-all
+test-all: ## Run all tests (unit + module + tools)
+	@./scripts/test.sh
+
 .PHONY: smoke
 smoke: ## Run smoke tests (stack must be running)
 	@./scripts/smoke.sh
 
 .PHONY: ci
-ci: lint test secrets build ## Full CI pipeline locally (lint + test + secrets + build)
+ci: lint test secrets build ## Full CI pipeline locally
+
+.PHONY: release
+release: ## Create a release (usage: make release BUMP=patch)
+	@./scripts/release.sh $(BUMP)
+
+.PHONY: version
+version: ## Show current version
+	@cat VERSION
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 

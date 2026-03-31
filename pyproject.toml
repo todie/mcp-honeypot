@@ -42,4 +42,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
     "integration: tests that require the live Docker Compose stack",
+    "unit: fast pure-logic tests (no external deps)",
+    "module: tests for server modules (may import OTel/structlog)",
+    "tools: tests for CLI tools and test harness",
 ]
