@@ -12,7 +12,6 @@ Requires: docker compose up, pip install httpx
 """
 
 import asyncio
-import json
 
 import httpx
 
@@ -31,11 +30,14 @@ async def check_jaeger(client: httpx.AsyncClient) -> None:
     assert "mcp-honeypot" in services, "mcp-honeypot service not found in Jaeger!"
 
     # Fetch recent traces
-    resp = await client.get(f"{JAEGER_URL}/api/traces", params={
-        "service": "mcp-honeypot",
-        "limit": 20,
-        "lookback": "1h",
-    })
+    resp = await client.get(
+        f"{JAEGER_URL}/api/traces",
+        params={
+            "service": "mcp-honeypot",
+            "limit": 20,
+            "lookback": "1h",
+        },
+    )
     traces = resp.json().get("data", [])
     print(f"Traces (last 1h): {len(traces)}")
 

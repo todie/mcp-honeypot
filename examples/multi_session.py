@@ -21,12 +21,30 @@ HONEYPOT_URL = "http://localhost:8000"
 
 # Each agent has a distinct identity
 AGENTS = [
-    {"user_agent": "ReconBot/1.0", "client_name": "ReconBot", "version": "1.0",
-     "tools": [("list_directory", {"path": "/"}), ("read_file", {"path": "/etc/passwd"})]},
-    {"user_agent": "DataHarvester/2.3", "client_name": "DataHarvester", "version": "2.3",
-     "tools": [("get_env_var", {"name": "AWS_ACCESS_KEY_ID"}), ("get_api_key", {"service": "openai"})]},
-    {"user_agent": "NetScanner/0.9", "client_name": "NetScanner", "version": "0.9",
-     "tools": [("fetch_url", {"url": "http://10.0.0.1"}), ("search_web", {"query": "target vulnerabilities"})]},
+    {
+        "user_agent": "ReconBot/1.0",
+        "client_name": "ReconBot",
+        "version": "1.0",
+        "tools": [("list_directory", {"path": "/"}), ("read_file", {"path": "/etc/passwd"})],
+    },
+    {
+        "user_agent": "DataHarvester/2.3",
+        "client_name": "DataHarvester",
+        "version": "2.3",
+        "tools": [
+            ("get_env_var", {"name": "AWS_ACCESS_KEY_ID"}),
+            ("get_api_key", {"service": "openai"}),
+        ],
+    },
+    {
+        "user_agent": "NetScanner/0.9",
+        "client_name": "NetScanner",
+        "version": "0.9",
+        "tools": [
+            ("fetch_url", {"url": "http://10.0.0.1"}),
+            ("search_web", {"query": "target vulnerabilities"}),
+        ],
+    },
 ]
 
 
@@ -66,20 +84,36 @@ async def run_agent(agent_config: dict) -> None:
                 nonlocal msg_id
                 msg_id += 1
                 responses[msg_id] = asyncio.get_event_loop().create_future()
-                await client.post(endpoint_url, json={
-                    "jsonrpc": "2.0", "id": msg_id, "method": method, "params": params,
-                })
+                await client.post(
+                    endpoint_url,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "method": method,
+                        "params": params,
+                    },
+                )
                 return await asyncio.wait_for(responses[msg_id], timeout=10)
 
             # Initialize with this agent's identity
-            await call("initialize", {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": agent_config["client_name"], "version": agent_config["version"]},
-            })
-            await client.post(endpoint_url, json={
-                "jsonrpc": "2.0", "method": "notifications/initialized",
-            })
+            await call(
+                "initialize",
+                {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {
+                        "name": agent_config["client_name"],
+                        "version": agent_config["version"],
+                    },
+                },
+            )
+            await client.post(
+                endpoint_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "notifications/initialized",
+                },
+            )
             await asyncio.sleep(0.3)
 
             # Call tools

@@ -69,11 +69,14 @@ async def main() -> None:
 
             # 2. Initialize the MCP session
             print("2. Initializing...")
-            init_resp = await call("initialize", {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "BasicExample", "version": "1.0"},
-            })
+            init_resp = await call(
+                "initialize",
+                {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "BasicExample", "version": "1.0"},
+                },
+            )
             print(f"   Server: {init_resp['result']['serverInfo']['name']}")
 
             # Send the required initialized notification
@@ -90,10 +93,13 @@ async def main() -> None:
 
             # 4. Call a tool
             print("4. Calling get_env_var...")
-            result = await call("tools/call", {
-                "name": "get_env_var",
-                "arguments": {"name": "AWS_SECRET_ACCESS_KEY"},
-            })
+            result = await call(
+                "tools/call",
+                {
+                    "name": "get_env_var",
+                    "arguments": {"name": "AWS_SECRET_ACCESS_KEY"},
+                },
+            )
             content = json.loads(result["result"]["content"][0]["text"])
             print(f"   Response: {json.dumps(content, indent=2)[:200]}")
 

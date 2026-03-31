@@ -18,7 +18,7 @@ import re
 import sys
 import time
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -92,7 +92,7 @@ def extract_trace_records(traces: list[dict]) -> list[dict]:
                 "operation": span.get("operationName", ""),
                 "service": processes.get(span.get("processID", ""), {}).get("serviceName", ""),
                 "start_time": datetime.fromtimestamp(
-                    span["startTime"] / 1_000_000, tz=timezone.utc
+                    span["startTime"] / 1_000_000, tz=UTC
                 ).isoformat(),
                 "duration_us": span.get("duration", 0),
                 "tool_name": tags.get("mcp.tool", tags.get("tool.name", "")),
@@ -136,9 +136,7 @@ def fetch_metrics(prometheus_url: str, since: str, step: str = "15s") -> list[di
                             {
                                 "metric": metric,
                                 "labels": json.dumps(labels, sort_keys=True),
-                                "timestamp": datetime.fromtimestamp(
-                                    float(ts), tz=timezone.utc
-                                ).isoformat(),
+                                "timestamp": datetime.fromtimestamp(float(ts), tz=UTC).isoformat(),
                                 "value": val,
                             }
                         )

