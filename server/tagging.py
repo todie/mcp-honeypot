@@ -1,207 +1,170 @@
-"""Anomaly detection and session tagging for the MCP honeypot.
+"""Anomaly tagging engine for the MCP honeypot.
 
-Implements all 7 anomaly flags from the threat model:
-  credential_probe, path_traversal, param_obfuscation,
-  rapid_enumeration, replay_attempt, exfiltration_chain,
-  privilege_escalation.
-
-Session state is an in-process dict keyed by session_id.  Entries
-inactive for >1 h are evicted on every call (no background thread).
+Analyses every tool call in the context of its session and returns a list
+of anomaly flag strings.  Flags are consumed by the instrumentation layer
+and attached to OpenTelemetry spans.
 """
 
 from __future__ import annotations
 
 import base64
 import hashlib
-import os
+import re
 import time
-from dataclasses import dataclass, field
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Module-level constants
+# Tool category mapping
 # ---------------------------------------------------------------------------
+SECRETS_TOOLS = {"get_env_var", "read_secret", "list_secrets", "get_api_key"}
+FILESYSTEM_TOOLS = {"read_file", "write_file", "list_directory", "delete_file"}
+WEB_TOOLS = {"fetch_url", "search_web", "screenshot"}
+EXEC_TOOLS = {"run_command", "run_python"}
 
-TOOL_CATEGORIES: dict[str, str] = {
-    "read_file": "filesystem",
-    "write_file": "filesystem",
-    "list_directory": "filesystem",
-    "delete_file": "filesystem",
-    "fetch_url": "web",
-    "search_web": "web",
-    "screenshot": "web",
-    "run_command": "exec",
-    "run_python": "exec",
-    "get_env_var": "secrets",
-    "read_secret": "secrets",
-    "list_secrets": "secrets",
-    "get_api_key": "secrets",
-}
+READ_TOOLS = {"read_file", "list_directory", "get_env_var", "read_secret",
+              "list_secrets", "get_api_key"}
+NETWORK_TOOLS = {"fetch_url", "search_web", "screenshot"}
 
-READ_TOOLS: set[str] = {
-    "read_file",
-    "list_directory",
-    "get_env_var",
-    "read_secret",
-    "list_secrets",
-    "get_api_key",
-}
+CATEGORY_MAP: dict[str, str] = {}
+for _tool in SECRETS_TOOLS:
+    CATEGORY_MAP[_tool] = "secrets"
+for _tool in FILESYSTEM_TOOLS:
+    CATEGORY_MAP[_tool] = "filesystem"
+for _tool in WEB_TOOLS:
+    CATEGORY_MAP[_tool] = "web"
+for _tool in EXEC_TOOLS:
+    CATEGORY_MAP[_tool] = "exec"
 
-NETWORK_TOOLS: set[str] = {"fetch_url", "search_web", "screenshot"}
-
-# Exfiltration chain TTL — how long after a read-family call a subsequent
-# network-family call is considered suspicious.  Reads from env so the
-# value can be overridden without touching code; falls back to 120 s.
-DEFAULT_EXFIL_TTL: int = 120
-_EXFIL_TTL: int = max(0, int(os.environ.get("SESSION_EXFIL_TTL_SECONDS", str(DEFAULT_EXFIL_TTL))))
-
-# Rapid-enumeration thresholds
-_RAPID_WINDOW_SECS: float = 5.0
-_RAPID_CALL_THRESHOLD: int = 10
-
-# Replay-attempt window
-_REPLAY_WINDOW_SECS: float = 60.0
-
-# Session eviction after inactivity
-_EVICTION_SECS: float = 3600.0  # 1 hour
+# ---------------------------------------------------------------------------
+# Tunables
+# ---------------------------------------------------------------------------
+RAPID_WINDOW_SECONDS = 5.0
+RAPID_THRESHOLD = 10          # flag when count EXCEEDS this
+REPLAY_TTL_SECONDS = 60.0
+EXFIL_TTL_SECONDS = 300.0     # read→network chain window
+SESSION_EVICT_SECONDS = 3600.0  # 1 hour
 
 # ---------------------------------------------------------------------------
 # Per-session state
 # ---------------------------------------------------------------------------
 
-
-@dataclass
-class _SessionData:
-    """Mutable tracking data for a single session."""
-
-    # Timestamps of all calls (used for rapid_enumeration)
-    call_timestamps: list[float] = field(default_factory=list)
-
-    # MD5 hex → timestamp of last occurrence (for replay_attempt)
-    call_hashes: dict[str, float] = field(default_factory=dict)
-
-    # Last time a read-family tool was invoked (for exfiltration_chain)
-    last_read_time: float | None = None
-
-    # Ordered list of unique categories seen so far (for privilege_escalation)
-    categories_seen: list[str] = field(default_factory=list)
-
-    # Timestamp of last activity (for eviction)
-    last_activity: float = field(default_factory=time.monotonic)
+def _new_session() -> dict[str, Any]:
+    return {
+        "calls": [],            # list of {"tool": str, "time": float}
+        "hashes": {},           # call_hash → last_seen_time
+        "last_read_time": None, # monotonic time of last READ_TOOLS call
+        "categories_seen": set(),
+        "last_active": time.monotonic(),
+    }
 
 
-# Global in-process state, keyed by session_id.
-session_state: dict[str, _SessionData] = {}
+session_state: dict[str, dict[str, Any]] = {}
+
+
+def reset_state() -> None:
+    """Clear all session state — used for test isolation."""
+    session_state.clear()
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-
 def _is_plausible_base64(value: str) -> bool:
-    """Return True if *value* (length >20) decodes as valid base64."""
+    """Return True if *value* successfully base64-decodes."""
     try:
-        decoded = base64.b64decode(value, validate=True)
-        # b64decode accepts empty bytes; also reject if the round-trip
-        # doesn't match (e.g. random strings that happen to decode).
-        return base64.b64encode(decoded).decode() == value
+        base64.b64decode(value, validate=True)
+        return True
     except Exception:
         return False
 
 
 def _call_hash(tool_name: str, params: dict[str, Any]) -> str:
-    """Deterministic hash of a tool call for replay detection."""
-    raw = f"{tool_name}{params!s}"
-    return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()
-
-
-def _evict_stale_sessions(now: float) -> None:
-    """Remove sessions that have been inactive for >1 h."""
-    stale = [
-        sid
-        for sid, data in session_state.items()
-        if (now - data.last_activity) > _EVICTION_SECS
-    ]
-    for sid in stale:
-        del session_state[sid]
+    """Deterministic hash of a tool call (tool + params)."""
+    raw = f"{tool_name}:{sorted(params.items())}"
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# Eviction
 # ---------------------------------------------------------------------------
 
+def _maybe_evict(session_id: str, now: float) -> None:
+    state = session_state.get(session_id)
+    if state is None:
+        return
+    if now - state["last_active"] > SESSION_EVICT_SECONDS:
+        del session_state[session_id]
+
+
+# ---------------------------------------------------------------------------
+# Core detection
+# ---------------------------------------------------------------------------
 
 def detect_anomalies(
     tool_name: str,
     params: dict[str, Any],
     session_id: str,
 ) -> list[str]:
-    """Return a list of anomaly flag strings for this tool call.
-
-    All 7 flags are checked on every call.  Session state is updated
-    as a side-effect.
-    """
+    """Return a list of anomaly flag strings for a single tool call."""
     now = time.monotonic()
 
-    # Evict stale sessions first (simple O(n) scan).
-    _evict_stale_sessions(now)
+    # Evict stale sessions before anything else
+    _maybe_evict(session_id, now)
 
-    # Get or create session data.
-    sd = session_state.setdefault(session_id, _SessionData(last_activity=now))
+    # Lazy-init session
+    if session_id not in session_state:
+        session_state[session_id] = _new_session()
+    state = session_state[session_id]
+    state["last_active"] = now
 
     flags: list[str] = []
 
-    category = TOOL_CATEGORIES.get(tool_name)
-
-    # --- 1. credential_probe ---
-    if category == "secrets":
+    # --- credential_probe ---
+    if tool_name in SECRETS_TOOLS:
         flags.append("credential_probe")
 
-    # --- 2. path_traversal ---
-    if "../" in str(params):
+    # --- path_traversal ---
+    if re.search(r"\.\./", str(params)):
         flags.append("path_traversal")
 
-    # --- 3. param_obfuscation ---
-    for value in params.values():
-        if isinstance(value, str) and len(value) > 20 and _is_plausible_base64(value):
+    # --- param_obfuscation (top-level string values only) ---
+    for v in params.values():
+        if isinstance(v, str) and len(v) > 20 and _is_plausible_base64(v):
             flags.append("param_obfuscation")
-            break  # one flag per call is enough
+            break
 
-    # --- 4. rapid_enumeration ---
-    sd.call_timestamps.append(now)
-    # Prune timestamps older than the rapid window.
-    cutoff = now - _RAPID_WINDOW_SECS
-    sd.call_timestamps = [ts for ts in sd.call_timestamps if ts >= cutoff]
-    if len(sd.call_timestamps) > _RAPID_CALL_THRESHOLD:
+    # --- rapid_enumeration ---
+    recent = [c for c in state["calls"] if now - c["time"] < RAPID_WINDOW_SECONDS]
+    if len(recent) > RAPID_THRESHOLD:
         flags.append("rapid_enumeration")
 
-    # --- 5. replay_attempt ---
+    # --- replay_attempt ---
     h = _call_hash(tool_name, params)
-    prev_time = sd.call_hashes.get(h)
-    if prev_time is not None and (now - prev_time) <= _REPLAY_WINDOW_SECS:
+    prev_time = state["hashes"].get(h)
+    if prev_time is not None and (now - prev_time) <= REPLAY_TTL_SECONDS:
         flags.append("replay_attempt")
-    sd.call_hashes[h] = now
+        # Do NOT update the timestamp on replay — the original timestamp
+        # anchors the TTL window so replays eventually age out.
+    else:
+        state["hashes"][h] = now
 
-    # --- 6. exfiltration_chain ---
-    if tool_name in NETWORK_TOOLS and sd.last_read_time is not None:
-        if (now - sd.last_read_time) <= _EXFIL_TTL:
+    # --- exfiltration_chain ---
+    if tool_name in NETWORK_TOOLS and state["last_read_time"] is not None:
+        if (now - state["last_read_time"]) <= EXFIL_TTL_SECONDS:
             flags.append("exfiltration_chain")
+
     if tool_name in READ_TOOLS:
-        sd.last_read_time = now
+        state["last_read_time"] = now
 
-    # --- 7. privilege_escalation ---
+    # --- privilege_escalation ---
+    category = CATEGORY_MAP.get(tool_name)
     if category is not None:
-        if len(sd.categories_seen) >= 1 and category not in sd.categories_seen:
+        if state["categories_seen"] and category not in state["categories_seen"]:
             flags.append("privilege_escalation")
-        if category not in sd.categories_seen:
-            sd.categories_seen.append(category)
+        state["categories_seen"].add(category)
 
-    # Update last-activity timestamp.
-    sd.last_activity = now
+    # Book-keeping
+    state["calls"].append({"tool": tool_name, "time": now})
 
     return flags
-
-
-def reset_state() -> None:
-    """Clear all session state.  Intended for use in tests."""
-    session_state.clear()

@@ -32,18 +32,8 @@ Starts as self-hosted research, evolves into standalone product.
 - Phase 2: Helm on K8s — reproducible, scalable
 - Phase 3: Public exposure — observe external agentic probing
 
-## Scripts
-All dev scripts live in `scripts/`. Key ones:
-- `./scripts/setup.sh` — create .env, venv, install deps
-- `./scripts/lint.sh` — ruff + pyright
-- `./scripts/test.sh` — pytest unit tests
-- `./scripts/up.sh` / `./scripts/down.sh` — Docker Compose stack
-- `./scripts/smoke.sh` — smoke tests against running stack
-- `./scripts/build.sh` — build server Docker image
-
 ## Quickstart
-    ./scripts/setup.sh
-    ./scripts/up.sh
+    docker-compose up
     Grafana:    http://localhost:3000  (admin/honeypot)
     Jaeger:     http://localhost:16686
     Prometheus: http://localhost:9090

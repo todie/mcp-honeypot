@@ -1,25 +1,21 @@
 # Python
 __pycache__/
 *.py[cod]
-*.class
+*$py.class
 *.so
-.Python
-build/
-develop-eggs/
+*.egg
+*.egg-info/
 dist/
-downloads/
+build/
 eggs/
-.eggs/
+parts/
+var/
+sdist/
+wheels/
+*.egg-link
+.installed.cfg
 lib/
 lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 MANIFEST
 
 # Virtual environments
@@ -31,19 +27,10 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
-.idea/
-*.swp
-*.swo
-*~
-
-# VSCode — allow shared workspace config, ignore personal state
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/launch.json
-
-# Testing
+# Distribution / packaging
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
 .tox/
 .nox/
 .coverage
@@ -55,50 +42,47 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-cover/
+htmlcov/
 
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
-.pyright/
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
 
-# Distribution / packaging
-*.manifest
-*.spec
+# pyenv
+.python-version
+
+# Secrets / environment
+*.env
+*.env.*
+.secrets
+secrets.yaml
+secrets.yml
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.docker/
+
+# Helm / Kubernetes
+*.tgz
+charts/*/charts/
+values.override.yaml
 
 # Logs
 *.log
 logs/
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Docker (volumes created by docker-compose)
-
-# Secrets / local overrides
-.env.local
-.env.*.local
-secrets/
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Helm
-helm/charts/
-helm/*.tgz
-
-# Grafana provisioned state
-dashboards/json/*.bak
-
-# Jupyter
-.ipynb_checkpoints
+# Prometheus / Grafana data
+data/
+prometheus_data/
+grafana_data/
