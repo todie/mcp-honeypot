@@ -6,7 +6,6 @@ scrape_configs:
     static_configs:
       - targets: [otel-collector:8889]
 
-storage:
-  tsdb:
-    retention.time: 30d
-    retention.size: 10GB
+# NOTE: Retention is set via command-line flags on the Prometheus container:
+#   --storage.tsdb.retention.time=30d
+#   --storage.tsdb.retention.size=10GB

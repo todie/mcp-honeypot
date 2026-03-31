@@ -67,7 +67,7 @@ class TestNeverRaise:
         with patch.dict(_GENERATORS, {"read_file": _exploding_generator}):
             resp = await generate("read_file", {"path": "/etc/passwd"})
         assert resp.type == "error"
-        assert "error" in resp.payload["status"]
+        assert resp.payload["error"] == "internal_error"
 
     @pytest.mark.asyncio
     async def test_unknown_tool_returns_plausible_not_error(self):

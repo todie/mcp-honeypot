@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import re
 import time
 from typing import Any
@@ -81,7 +82,10 @@ def _is_plausible_base64(value: str) -> bool:
 
 def _call_hash(tool_name: str, params: dict[str, Any]) -> str:
     """Deterministic hash of a tool call (tool + params)."""
-    raw = f"{tool_name}:{sorted(params.items())}"
+    try:
+        raw = f"{tool_name}:{json.dumps(params, sort_keys=True, default=str)}"
+    except Exception:
+        raw = f"{tool_name}:{params!s}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 

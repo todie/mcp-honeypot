@@ -150,17 +150,17 @@ class TestPortValidation:
 
     @patch.dict(os.environ, _env(MCP_PORT="abc"), clear=True)
     def test_non_integer_raises(self):
-        with pytest.raises(ValueError, match="not a valid integer"):
+        with pytest.raises(ValueError, match="must be an integer"):
             Settings.from_env()
 
     @patch.dict(os.environ, _env(MCP_PORT="0"), clear=True)
     def test_zero_port_raises(self):
-        with pytest.raises(ValueError, match="out of range"):
+        with pytest.raises(ValueError, match="1–65535"):
             Settings.from_env()
 
     @patch.dict(os.environ, _env(MCP_PORT="65536"), clear=True)
     def test_above_max_raises(self):
-        with pytest.raises(ValueError, match="out of range"):
+        with pytest.raises(ValueError, match="1–65535"):
             Settings.from_env()
 
     @patch.dict(os.environ, _env(MCP_PORT="65535"), clear=True)
@@ -241,7 +241,7 @@ class TestGetIntHelper:
 
     @patch.dict(os.environ, {"NUM": "xyz"}, clear=True)
     def test_non_int_raises(self):
-        with pytest.raises(ValueError, match="not a valid integer"):
+        with pytest.raises(ValueError, match="must be an integer"):
             _get_int("NUM", 0)
 
     @patch.dict(os.environ, {"NUM": ""}, clear=True)

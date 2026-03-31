@@ -11,6 +11,11 @@ if ! curl -sf http://localhost:8000/healthz > /dev/null 2>&1; then
     exit 1
 fi
 
+if [ ! -f tests/smoke_test.py ]; then
+    echo "ERROR: tests/smoke_test.py not yet implemented (T12)"
+    exit 1
+fi
+
 echo "==> Running smoke tests"
 if [ -f .venv/bin/python ]; then
     .venv/bin/python tests/smoke_test.py "$@"
