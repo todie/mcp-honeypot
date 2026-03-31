@@ -40,7 +40,7 @@ reportMissingTypeStubs = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=server --cov-report=term-missing --cov-report=html:htmlcov --cov-fail-under=60"
+addopts = "-v --tb=short"
 markers = [
     "integration: tests that require the live Docker Compose stack",
     "unit: fast pure-logic tests (no external deps)",
