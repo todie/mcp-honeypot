@@ -1,21 +1,25 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.so
-*.egg
-*.egg-info/
-dist/
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
 eggs/
-parts/
-var/
-sdist/
-wheels/
-*.egg-link
-.installed.cfg
+.eggs/
 lib/
 lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 MANIFEST
 
 # Virtual environments
@@ -27,10 +31,14 @@ ENV/
 env.bak/
 venv.bak/
 
-# Distribution / packaging
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
 .tox/
 .nox/
 .coverage
@@ -42,47 +50,51 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-htmlcov/
+cover/
 
-# Jupyter
-.ipynb_checkpoints
-*.ipynb
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
 
-# pyenv
-.python-version
-
-# Secrets / environment
-*.env
-*.env.*
-.secrets
-secrets.yaml
-secrets.yml
-
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Docker
-.docker/
-
-# Helm / Kubernetes
-*.tgz
-charts/*/charts/
-values.override.yaml
+# Distribution / packaging
+*.manifest
+*.spec
 
 # Logs
 *.log
 logs/
 
-# Prometheus / Grafana data
-data/
-prometheus_data/
-grafana_data/
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Docker
+.dockerignore
+
+# Secrets / local overrides
+.env.local
+.env.*.local
+secrets/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Helm
+helm/charts/
+helm/*.tgz
+
+# Grafana provisioned state
+dashboards/json/*.bak
+
+# Jupyter
+.ipynb_checkpoints

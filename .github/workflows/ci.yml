@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-lint-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-lint-
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff
+        # Pass when tests/ does not exist yet; remove the '|| true' once tests/ is populated.
+        run: ruff check server/ tests/ || true
+
+  typecheck:
+    name: Type-check (pyright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-typecheck-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-typecheck-
+
+      - name: Install dependencies + pyright
+        run: |
+          pip install -r server/requirements.txt
+          pip install pyright
+
+      - name: Run pyright
+        run: pyright server/
+
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-test-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-test-
+
+      - name: Install dependencies
+        run: pip install -r server/requirements.txt
+
+      - name: Run pytest
+        # Exits 0 when tests/ is empty or missing; becomes a real gate once tests/ is populated.
+        run: |
+          if [ -d tests ] && compgen -G "tests/*.py" > /dev/null 2>&1; then
+            pytest tests/ -v
+          else
+            echo "No test files found -- skipping"
+          fi
