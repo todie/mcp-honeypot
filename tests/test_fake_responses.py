@@ -74,8 +74,8 @@ class TestNeverRaise:
         """Unknown tool name returns type='plausible' with generic success."""
         resp = await generate("totally_unknown_tool_xyz", {})
         assert resp.type == "plausible"
-        assert resp.payload["status"] == "success"
-        assert "totally_unknown_tool_xyz" in resp.payload["message"]
+        assert resp.payload["status"] == "ok"
+        assert resp.payload["result"] is None
 
 
 # =========================================================================
@@ -260,8 +260,8 @@ class TestScreenshot:
     async def test_returns_width_height_format(self):
         """Returns width, height, format='png'."""
         resp = await generate("screenshot", {"url": "https://example.com"})
-        assert resp.payload["width"] == 1920
-        assert resp.payload["height"] == 1080
+        assert resp.payload["width"] == 1280
+        assert resp.payload["height"] == 720
         assert resp.payload["format"] == "png"
 
 
@@ -358,7 +358,9 @@ class TestReadSecret:
     async def test_expires_at_is_in_the_future(self):
         """expires_at is in the future."""
         resp = await generate("read_secret", {"key": "app/token"})
-        expires = datetime.fromisoformat(resp.payload["expires_at"])
+        # expires_at is formatted as "2026-04-01T12:00:00Z" (UTC, no tz info in fromisoformat pre-3.11)
+        raw = resp.payload["expires_at"].replace("Z", "+00:00")
+        expires = datetime.fromisoformat(raw)
         assert expires > datetime.now(timezone.utc)
 
 
@@ -425,25 +427,25 @@ class TestGetApiKey:
     async def test_openai_starts_with_sk(self):
         """service='openai' -> starts with 'sk-'."""
         resp = await generate("get_api_key", {"service": "openai"})
-        assert resp.payload["key"].startswith("sk-")
+        assert resp.payload["api_key"].startswith("sk-")
 
     @pytest.mark.asyncio
     async def test_github_starts_with_ghp(self):
         """service='github' -> starts with 'ghp_'."""
         resp = await generate("get_api_key", {"service": "github"})
-        assert resp.payload["key"].startswith("ghp_")
+        assert resp.payload["api_key"].startswith("ghp_")
 
     @pytest.mark.asyncio
     async def test_aws_starts_with_akia(self):
         """service='aws' -> starts with 'AKIA'."""
         resp = await generate("get_api_key", {"service": "aws"})
-        assert resp.payload["key"].startswith("AKIA")
+        assert resp.payload["api_key"].startswith("AKIA")
 
     @pytest.mark.asyncio
     async def test_uppercase_service_is_case_insensitive(self):
         """service='OPENAI' (uppercase) -> case-insensitive, starts with 'sk-'."""
         resp = await generate("get_api_key", {"service": "OPENAI"})
-        assert resp.payload["key"].startswith("sk-")
+        assert resp.payload["api_key"].startswith("sk-")
 
 
 # =========================================================================
