@@ -75,7 +75,7 @@ services:
     volumes:
       - ./dashboards/provisioning:/etc/grafana/provisioning:ro
       - ./dashboards/json:/var/lib/grafana/dashboards:ro
-      - grafana-data:/var/lib/grafana
+      - grafana-data:/var/lib/grafana/data
     ports:
       - "3000:3000"
     depends_on:
