@@ -22,8 +22,9 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S", "B904", "SIM105", "C416"]  # test code, relaxed rules
-"tools/*" = ["S", "B904", "SIM", "F841", "C416"]  # demo/tooling code, relaxed rules
+"tests/*" = ["S", "B904", "SIM105", "C416", "E402"]  # test code, relaxed rules
+"tools/*" = ["S", "B904", "SIM", "F841", "C416", "E402"]  # demo/tooling code, relaxed rules
+"examples/*" = ["S", "B904", "SIM", "F841", "T201"]  # example code, relaxed rules
 "server/tools/fake_responses.py" = ["S108"]  # fake paths like /tmp/ are intentional
 "server/main.py" = ["SIM117"]  # nested with for SSE transport is clearer than single-line
 "server/transport_wrapper.py" = ["S110"]  # try-except-pass for stream cleanup is intentional
@@ -39,7 +40,9 @@ reportMissingTypeStubs = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-collect_ignore = ["tests/smoke_test.py"]
 markers = [
     "integration: tests that require the live Docker Compose stack",
+    "unit: fast pure-logic tests (no external deps)",
+    "module: tests for server modules (may import OTel/structlog)",
+    "tools: tests for CLI tools and test harness",
 ]

@@ -14,7 +14,7 @@ from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
     OTLPSpanExporter,
 )
-from opentelemetry.metrics import Counter, Histogram, Meter
+from opentelemetry.metrics import Counter, Histogram, Meter, UpDownCounter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
@@ -30,9 +30,10 @@ _telemetry_initialised: bool = False
 # ---------------------------------------------------------------------------
 # Module-level metric instruments (populated by setup_telemetry)
 # ---------------------------------------------------------------------------
-mcp_tool_calls_total: Counter
-mcp_anomalies_total: Counter
-mcp_response_latency_ms: Histogram
+mcp_tool_calls_total: Counter = None  # type: ignore[assignment]
+mcp_anomalies_total: Counter = None  # type: ignore[assignment]
+mcp_response_latency_ms: Histogram = None  # type: ignore[assignment]
+mcp_sessions_active: UpDownCounter = None  # type: ignore[assignment]
 
 
 def setup_telemetry() -> None:
@@ -42,7 +43,7 @@ def setup_telemetry() -> None:
     Configuration is read from ``config.settings``.
     """
     global _telemetry_initialised
-    global mcp_tool_calls_total, mcp_anomalies_total, mcp_response_latency_ms
+    global mcp_tool_calls_total, mcp_anomalies_total, mcp_response_latency_ms, mcp_sessions_active
 
     if _telemetry_initialised:
         return
@@ -87,6 +88,11 @@ def setup_telemetry() -> None:
         name="mcp_response_latency_ms",
         description="Latency of fake tool responses in milliseconds",
         unit="ms",
+    )
+    mcp_sessions_active = meter.create_up_down_counter(
+        name="mcp_sessions_active",
+        description="Number of currently active MCP SSE sessions",
+        unit="1",
     )
 
     _telemetry_initialised = True

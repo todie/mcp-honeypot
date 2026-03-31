@@ -10,10 +10,13 @@
         static_configs:
           - targets: [otel-collector:8889]
 
-    storage:
-      tsdb:
-        retention.time: 30d
-        retention.size: 10GB
+Retention is configured via CLI flags in docker-compose.yaml (not prometheus.yml):
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=10GB
+      - --web.enable-lifecycle
 
 ## Key Metrics
 | Metric | Type | Labels | Description |
@@ -38,8 +41,12 @@
 
 ## Jaeger Config (docker-compose)
 
+Jaeger uses Badger persistent storage with a 7-day TTL. Runs as root
+(`user: root`) for volume permissions on the `/badger` mount.
+
     jaeger:
-      image: jaegertracing/all-in-one:latest
+      image: jaegertracing/all-in-one:1.55
+      user: root
       environment:
         COLLECTOR_OTLP_ENABLED: "true"
         SPAN_STORAGE_TYPE: badger
@@ -50,5 +57,5 @@
       volumes:
         - jaeger-data:/badger
       ports:
-        - "16686:16686"
-        - "14250:14250"
+        - "16686:16686"   # Jaeger UI
+        - "4317"          # OTLP gRPC (collector → jaeger, internal only)

@@ -34,7 +34,7 @@ from starlette.routing import Route
 
 setup_logging()
 
-from instrumentation import get_tracer, setup_telemetry  # noqa: E402
+from instrumentation import get_tracer, mcp_sessions_active, setup_telemetry  # noqa: E402
 
 setup_telemetry()
 
@@ -128,17 +128,21 @@ async def handle_sse(request: Request) -> None:
         agent_id=transport.agent_id,
     )
 
-    async with sse_transport.connect_sse(
-        request.scope,
-        request.receive,
-        request._send,  # noqa: SLF001 — Starlette exposes no public send
-    ) as (read_stream, write_stream):
-        async with transport.wrap_read_stream(read_stream) as instrumented_stream:
-            await mcp_server.run(
-                instrumented_stream,
-                write_stream,
-                mcp_server.create_initialization_options(),
-            )
+    mcp_sessions_active.add(1)
+    try:
+        async with sse_transport.connect_sse(
+            request.scope,
+            request.receive,
+            request._send,  # noqa: SLF001 — Starlette exposes no public send
+        ) as (read_stream, write_stream):
+            async with transport.wrap_read_stream(read_stream) as instrumented_stream:
+                await mcp_server.run(
+                    instrumented_stream,
+                    write_stream,
+                    mcp_server.create_initialization_options(),
+                )
+    finally:
+        mcp_sessions_active.add(-1)
 
     logger.info(
         "sse_connection_closed",

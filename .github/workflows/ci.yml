@@ -26,10 +26,10 @@ jobs:
         run: pip install ruff
 
       - name: Ruff check
-        run: ruff check server/ tests/
+        run: ruff check server/ tests/ tools/ examples/
 
       - name: Ruff format check
-        run: ruff format --check server/ tests/
+        run: ruff format --check server/ tests/ tools/ examples/
 
   typecheck:
     name: Type-check (pyright)
@@ -56,8 +56,9 @@ jobs:
       - name: Run pyright
         run: pyright server/
 
-  test:
-    name: Tests (pytest)
+  # Fast unit tests — pure logic, no external deps (~135 tests)
+  test-unit:
+    name: Unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,10 +77,62 @@ jobs:
       - name: Install dependencies
         run: pip install -r server/requirements.txt
 
-      - name: Run pytest
+      - name: Run unit tests
         env:
           PYTHONPATH: server
-        run: pytest tests/ -v
+        run: pytest tests/ -m unit -v --tb=short
+
+  # Module tests — server modules with OTel/structlog (~50 tests)
+  test-module:
+    name: Module tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-test-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-test-
+
+      - name: Install dependencies
+        run: pip install -r server/requirements.txt
+
+      - name: Run module tests
+        env:
+          PYTHONPATH: server
+        run: pytest tests/ -m module -v --tb=short
+
+  # Tool/harness tests — adversarial agent, export, harness (~50 tests)
+  test-tools:
+    name: Tool tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-test-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-test-
+
+      - name: Install dependencies
+        run: pip install -r server/requirements.txt
+
+      - name: Run tool tests
+        env:
+          PYTHONPATH: server
+        run: pytest tests/ -m tools -v --tb=short
 
   secrets:
     name: Secrets scan (gitleaks)

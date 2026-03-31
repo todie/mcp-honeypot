@@ -472,8 +472,10 @@ PERSONAS: dict[str, Any] = {
 class MCPSession:
     """One SSE session to the MCP honeypot server.
 
-    Connects via GET /sse, reads the endpoint URL from the first SSE event,
-    then posts JSON-RPC messages to that endpoint.
+    Keeps a long-lived GET /sse connection open in a background task to
+    receive JSON-RPC responses.  POSTs JSON-RPC messages to the endpoint
+    URL extracted from the SSE ``endpoint`` event.  Uses asyncio.Future
+    objects keyed by message id to match responses to requests.
     """
 
     def __init__(
@@ -481,99 +483,206 @@ class MCPSession:
         base_url: str,
         user_agent: str | None = None,
         verbose: bool = False,
+        timeout: float = 30.0,
     ):
         self.base_url = base_url.rstrip("/")
         self.user_agent = user_agent or f"AdversarialAgent/1.0 (session-{uuid.uuid4().hex[:8]})"
         self.verbose = verbose
+        self._timeout = timeout
+
         self._client: httpx.AsyncClient | None = None
         self._endpoint: str | None = None
         self._msg_id: int = 0
         self._session_id: str = uuid.uuid4().hex[:12]
 
+        # SSE stream state
+        self._sse_stream: httpx.Response | None = None
+        self._sse_task: asyncio.Task[None] | None = None
+        self._sse_connected = asyncio.Event()
+        self._closed = False
+
+        # Pending responses: msg_id -> Future
+        self._pending: dict[int, asyncio.Future[dict[str, Any]]] = {}
+
     @property
     def session_id(self) -> str:
         return self._session_id
 
+    # ------------------------------------------------------------------
+    # SSE background reader
+    # ------------------------------------------------------------------
+
+    async def _read_sse_stream(self) -> None:
+        """Background task: read SSE events, dispatch JSON-RPC responses."""
+        try:
+            event_type = ""
+            data_lines: list[str] = []
+
+            async for line in self._sse_stream.aiter_lines():  # type: ignore[union-attr]
+                if self._closed:
+                    break
+
+                if line.startswith("event:"):
+                    event_type = line.split(":", 1)[1].strip()
+                    data_lines = []
+                elif line.startswith("data:"):
+                    data_lines.append(line.split(":", 1)[1].strip())
+                elif line == "":
+                    # Empty line = end of SSE event
+                    if event_type and data_lines:
+                        data = "\n".join(data_lines)
+                        self._handle_sse_event(event_type, data)
+                    event_type = ""
+                    data_lines = []
+
+        except httpx.ReadError:
+            if not self._closed:
+                pass  # connection closed by server
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            if not self._closed:
+                pass  # unexpected error; session will notice via timeouts
+
+    def _handle_sse_event(self, event_type: str, data: str) -> None:
+        """Process a single SSE event."""
+        if event_type == "endpoint":
+            if data.startswith("/"):
+                self._endpoint = f"{self.base_url}{data}"
+            elif data.startswith("http"):
+                self._endpoint = data
+            else:
+                self._endpoint = f"{self.base_url}/{data}"
+            self._sse_connected.set()
+
+        elif event_type == "message":
+            try:
+                msg = json.loads(data)
+            except json.JSONDecodeError:
+                return
+
+            if not isinstance(msg, dict):
+                return
+
+            msg_id = msg.get("id")
+            if msg_id is not None and msg_id in self._pending:
+                future = self._pending.pop(msg_id)
+                if not future.done():
+                    future.set_result(msg)
+
+    # ------------------------------------------------------------------
+    # Connection lifecycle
+    # ------------------------------------------------------------------
+
     async def connect(self) -> None:
-        """Establish SSE connection and discover the message endpoint."""
+        """Open the SSE connection and wait for the endpoint URL."""
         self._client = httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0, connect=10.0),
+            timeout=httpx.Timeout(self._timeout, connect=10.0),
             headers={"User-Agent": self.user_agent},
         )
 
-        # GET /sse to receive the endpoint event
+        # Start streaming GET /sse  (kept open for the session lifetime)
+        self._sse_stream = await self._client.send(
+            self._client.build_request(
+                "GET",
+                f"{self.base_url}/sse",
+                headers={"Accept": "text/event-stream"},
+            ),
+            stream=True,
+        )
+
+        # Launch background reader
+        self._sse_task = asyncio.create_task(self._read_sse_stream())
+
+        # Wait for the endpoint event
         try:
-            async with self._client.stream("GET", f"{self.base_url}/sse") as resp:
-                resp.raise_for_status()
-                # Read SSE events until we get the endpoint
-                buffer = ""
-                async for chunk in resp.aiter_text():
-                    buffer += chunk
-                    # Parse SSE: look for "event: endpoint\ndata: <url>"
-                    if "event: endpoint" in buffer:
-                        for line in buffer.split("\n"):
-                            line = line.strip()
-                            if line.startswith("data:"):
-                                endpoint_path = line[len("data:") :].strip()
-                                if endpoint_path.startswith("/"):
-                                    self._endpoint = f"{self.base_url}{endpoint_path}"
-                                elif endpoint_path.startswith("http"):
-                                    self._endpoint = endpoint_path
-                                else:
-                                    self._endpoint = f"{self.base_url}/{endpoint_path}"
-                                break
-                        if self._endpoint:
-                            break
-        except Exception:
-            # If SSE streaming connect fails, fall back to direct POST
-            # The server uses /messages as the POST endpoint
-            self._endpoint = f"{self.base_url}/messages"
+            await asyncio.wait_for(self._sse_connected.wait(), timeout=self._timeout)
+        except TimeoutError:
+            await self.close()
+            raise TimeoutError(f"Timed out waiting for SSE endpoint event from {self.base_url}/sse")
 
-        if not self._endpoint:
-            self._endpoint = f"{self.base_url}/messages"
-
-    async def _post_rpc(
+    async def _send_request(
         self, method: str, params: dict[str, Any] | None = None
-    ) -> dict[str, Any] | None:
-        """Post a JSON-RPC 2.0 message and return the result."""
-        if not self._client:
+    ) -> dict[str, Any]:
+        """Send a JSON-RPC request (with id) and await the response via SSE."""
+        if not self._client or not self._endpoint:
             raise RuntimeError("Session not connected")
 
         self._msg_id += 1
+        msg_id = self._msg_id
         payload: dict[str, Any] = {
             "jsonrpc": "2.0",
-            "id": self._msg_id,
+            "id": msg_id,
+            "method": method,
+        }
+        if params is not None:
+            payload["params"] = params
+
+        # Create a future for the response
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[dict[str, Any]] = loop.create_future()
+        self._pending[msg_id] = future
+
+        # POST the message
+        try:
+            resp = await self._client.post(
+                self._endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            if resp.status_code not in (200, 202):
+                self._pending.pop(msg_id, None)
+                return {
+                    "_error": True,
+                    "status": resp.status_code,
+                    "body": resp.text[:500],
+                }
+        except httpx.TimeoutException:
+            self._pending.pop(msg_id, None)
+            return {"_error": True, "message": "timeout"}
+        except httpx.ConnectError as exc:
+            self._pending.pop(msg_id, None)
+            return {"_error": True, "message": f"connection failed: {exc}"}
+        except Exception as exc:
+            self._pending.pop(msg_id, None)
+            return {"_error": True, "message": str(exc)[:200]}
+
+        # Wait for the SSE response
+        try:
+            result = await asyncio.wait_for(future, timeout=self._timeout)
+        except TimeoutError:
+            self._pending.pop(msg_id, None)
+            return {
+                "_error": True,
+                "message": f"timeout waiting for {method} response (id={msg_id})",
+            }
+
+        return result
+
+    async def _send_notification(self, method: str, params: dict[str, Any] | None = None) -> None:
+        """Send a JSON-RPC notification (no id, no response expected)."""
+        if not self._client or not self._endpoint:
+            raise RuntimeError("Session not connected")
+
+        payload: dict[str, Any] = {
+            "jsonrpc": "2.0",
             "method": method,
         }
         if params is not None:
             payload["params"] = params
 
         try:
-            resp = await self._client.post(
-                self._endpoint,  # type: ignore[arg-type]
+            await self._client.post(
+                self._endpoint,
                 json=payload,
                 headers={"Content-Type": "application/json"},
             )
-            if resp.status_code == 202:
-                # SSE transport returns 202 Accepted; response comes on SSE stream.
-                # For our purposes we treat this as success.
-                return {"_accepted": True, "status": 202}
-            if resp.status_code >= 400:
-                return {"_error": True, "status": resp.status_code, "body": resp.text[:500]}
-            try:
-                return resp.json()
-            except Exception:
-                return {"_raw": resp.text[:500]}
-        except httpx.TimeoutException:
-            return {"_error": True, "message": "timeout"}
-        except httpx.ConnectError as exc:
-            return {"_error": True, "message": f"connection failed: {exc}"}
-        except Exception as exc:
-            return {"_error": True, "message": str(exc)[:200]}
+        except Exception:
+            pass  # notifications are fire-and-forget
 
     async def initialize(self) -> dict[str, Any] | None:
         """Send the MCP initialize handshake."""
-        return await self._post_rpc(
+        result = await self._send_request(
             "initialize",
             {
                 "protocolVersion": "2024-11-05",
@@ -585,13 +694,18 @@ class MCPSession:
             },
         )
 
+        # Send notifications/initialized (NO id -- it's a notification)
+        await self._send_notification("notifications/initialized")
+
+        return result
+
     async def list_tools(self) -> dict[str, Any] | None:
         """Request the tool list from the server."""
-        return await self._post_rpc("tools/list")
+        return await self._send_request("tools/list")
 
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any] | None:
         """Invoke a tool on the honeypot."""
-        return await self._post_rpc(
+        return await self._send_request(
             "tools/call",
             {
                 "name": tool_name,
@@ -600,7 +714,30 @@ class MCPSession:
         )
 
     async def close(self) -> None:
-        """Clean up the HTTP client."""
+        """Tear down the SSE connection and clean up."""
+        self._closed = True
+
+        # Cancel background reader
+        if self._sse_task is not None and not self._sse_task.done():
+            self._sse_task.cancel()
+            try:
+                await self._sse_task
+            except asyncio.CancelledError:
+                pass
+            self._sse_task = None
+
+        # Close SSE stream
+        if self._sse_stream is not None:
+            await self._sse_stream.aclose()
+            self._sse_stream = None
+
+        # Cancel pending futures
+        for future in self._pending.values():
+            if not future.done():
+                future.cancel()
+        self._pending.clear()
+
+        # Close httpx client
         if self._client:
             await self._client.aclose()
             self._client = None
@@ -675,21 +812,23 @@ class AdversarialAgent:
             print(f"{prefix} {dim('Endpoint:')} {session._endpoint}")
 
             init_resp = await session.initialize()
-            if init_resp and init_resp.get("_error"):
+            if init_resp and (init_resp.get("_error") or "error" in init_resp):
                 print(
                     f"{prefix} {yellow('Initialize returned error (continuing):')} {dim(str(init_resp)[:100])}"
                 )
             else:
-                print(
-                    f"{prefix} {green('Initialized')} {dim(str(init_resp)[:80] if init_resp else '')}"
-                )
+                result_preview = str(init_resp.get("result", init_resp))[:80] if init_resp else ""
+                print(f"{prefix} {green('Initialized')} {dim(result_preview)}")
 
             tools_resp = await session.list_tools()
-            if tools_resp and not tools_resp.get("_error"):
-                print(f"{prefix} {green('Tools listed')} {dim(str(tools_resp)[:80])}")
+            if tools_resp and not tools_resp.get("_error") and "error" not in tools_resp:
+                tools_list = tools_resp.get("result", {}).get("tools", [])
+                tool_names = [t.get("name", "?") for t in tools_list][:10]
+                tools_summary = f"{len(tools_list)} tools: {', '.join(tool_names)}"
+                print(f"{prefix} {green('Tools listed')} {dim(tools_summary)}")
         except Exception as exc:
             print(f"{prefix} {red(f'Connection failed: {exc}')}")
-            print(f"{prefix} {yellow('Continuing with direct POST mode...')}")
+            print(f"{prefix} {yellow('Tool calls will fail -- server unreachable')}")
 
         session_start = time.monotonic()
 
@@ -771,9 +910,12 @@ class AdversarialAgent:
                 if resp and resp.get("_error"):
                     resp_type = red("ERR")
                     resp_preview = str(resp.get("message", resp.get("body", "")))[:60]
-                elif resp and resp.get("_accepted"):
-                    resp_type = green("ACK")
-                    resp_preview = "202 Accepted"
+                elif resp and "error" in resp:
+                    resp_type = yellow("RPC")
+                    resp_preview = json.dumps(resp["error"], default=str)[:60]
+                elif resp and "result" in resp:
+                    resp_type = green("OK ")
+                    resp_preview = json.dumps(resp["result"], default=str)[:60]
                 else:
                     resp_type = green("OK ")
                     resp_preview = json.dumps(resp, default=str)[:60] if resp else ""
